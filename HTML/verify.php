@@ -1,7 +1,7 @@
 <?php
 $servername = "localhost";
 $username = "root";
-$password = "";
+$password = "g8gbV0noL$3&fA6x-GAMER";
 $dbname = "perfectfit";
 
 $conn = new mysqli($servername, $username, $password, $dbname);

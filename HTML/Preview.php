@@ -8,7 +8,7 @@ if (!isset($_SESSION['email'])) {
 
 $servername = "localhost";
 $username = "root";
-$password = "";
+$password = "g8gbV0noL$3&fA6x-GAMER";
 $dbname = "perfectfit";
 
 // Create connection
