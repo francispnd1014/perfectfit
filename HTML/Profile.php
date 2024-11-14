@@ -39,6 +39,11 @@ if ($result->num_rows > 0) {
     exit();
 }
 
+$target_dir = "uploaded_img/";
+if (!is_dir($target_dir)) {
+    mkdir($target_dir, 0755, true);
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['update-details'])) {
         $newFname = $_POST['fname'];
@@ -60,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Check if a new profile picture is uploaded
         if (!empty($_FILES['profile-pic']['name'])) {
             // Handle profile picture upload
-            $target_dir = "uploaded_img/";
             $file_name = basename($_FILES["profile-pic"]["name"]);
             $target_file = $target_dir . $file_name;
 
