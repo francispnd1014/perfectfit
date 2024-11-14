@@ -58,7 +58,7 @@ if (isset($_POST['add_product'])) {
 
         if (count($image_paths) == count($product_images['name'])) {
             $image_paths_serialized = serialize($image_paths);
-            $insert = "INSERT INTO product (name, price, size, color, theme, analysis, tone, img, tally, status) VALUES ('$product_name', '$product_rent', '$product_size', '$color_to_use', '$product_theme', '$product_analysis', '$product_tone', '$image_paths_serialized', 0, 'active')";            
+            $insert = "INSERT INTO product (name, price, size, color, theme, analysis, tone, img, tally, status) VALUES ('$product_name', '$product_rent', '$product_size', '$color_to_use', '$product_theme', '$product_analysis', '$product_tone', '$image_paths_serialized', 0, 0)";            
             $upload = mysqli_query($conn, $insert);
             if ($upload) {
                 $message[] = 'New product added successfully.';
@@ -185,8 +185,7 @@ $select = mysqli_query($conn, "SELECT * FROM product");
 
         <main class="content">
             <div class="product-display">
-                <button class="btn-add-product" id="btnAddProduct">Add New Product</button>
-
+            <button class="btn-add-product" id="btnAddProduct">Add New Product</button>
                 <?php while ($row = mysqli_fetch_assoc($select)) { ?>
                     <div class="card">
                         <div class="image">
@@ -222,6 +221,43 @@ $select = mysqli_query($conn, "SELECT * FROM product");
         </div>
     </div>
     <script>
+            document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById("myModal");
+        var btn = document.getElementById("btnAddProduct");
+        var cancelBtn = document.getElementById("btnCancel");
+
+        // When the user clicks the button, open the modal 
+        btn.onclick = function() {
+            modal.style.display = "block";
+        }
+
+        // When the user clicks on the cancel button, close the modal
+        cancelBtn.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    });
+
+    function toggleDropdown() {
+        var dropdown = document.getElementById("myDropdown");
+        dropdown.classList.toggle("show");
+    }
+
+    function showSelectColor() {
+        document.getElementById("select_color_div").style.display = "block";
+        document.getElementById("new_color_div").style.display = "none";
+    }
+
+    function showNewColor() {
+        document.getElementById("select_color_div").style.display = "none";
+        document.getElementById("new_color_div").style.display = "block";
+    }
         document.addEventListener('DOMContentLoaded', function() {
             var modal = document.getElementById("deleteModal");
             var span = document.getElementsByClassName("close")[0];
