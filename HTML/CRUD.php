@@ -41,10 +41,38 @@ if (isset($_POST['add_product'])) {
             $product_image_tmp_name = $product_images['tmp_name'][$i];
             $product_image_folder = 'uploaded_img/' . $product_image;
 
-            if (move_uploaded_file($product_image_tmp_name, $product_image_folder)) {
-                $image_paths[] = $product_image;
-            } else {
-                $message[] = 'Could not upload image: ' . $product_image;
+            // Use a safe file name and escape the string for SQL
+            $safe_file_name = $conn->real_escape_string($product_image);
+
+            $uploadOk = 1;
+            $imageFileType = strtolower(pathinfo($product_image_folder, PATHINFO_EXTENSION));
+
+            // Check if image file is a valid image type
+            $check = getimagesize($product_image_tmp_name);
+            if ($check === false) {
+                $uploadOk = 0;
+                $message[] = 'File is not an image: ' . $product_image;
+            }
+
+            // Check file size (5MB maximum)
+            if ($product_images["size"][$i] > 5000000) {
+                $uploadOk = 0;
+                $message[] = 'Sorry, your file is too large: ' . $product_image;
+            }
+
+            // Allow only certain file formats
+            if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif") {
+                $uploadOk = 0;
+                $message[] = 'Sorry, only JPG, JPEG, PNG & GIF files are allowed: ' . $product_image;
+            }
+
+            // Check if upload is OK and move the file
+            if ($uploadOk == 1) {
+                if (move_uploaded_file($product_image_tmp_name, $product_image_folder)) {
+                    $image_paths[] = $safe_file_name;
+                } else {
+                    $message[] = 'Could not upload image: ' . $product_image;
+                }
             }
         }
 
@@ -146,7 +174,7 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                             </select>
                             <h4>Select Size</h4>
                             <div class="checkbox-group">
-                            <label class="tones"><input type="checkbox" name="product_size[]" value="Extra Small"> Extra Small</label>
+                                <label class="tones"><input type="checkbox" name="product_size[]" value="Extra Small"> Extra Small</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Small"> Small</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Medium"> Medium</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Large"> Large</label>
