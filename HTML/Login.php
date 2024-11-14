@@ -255,7 +255,7 @@ $conn->close();
                     <input type="text" name="fname" class="input-field" placeholder="First Name" required>
                     <input type="text" name="sname" class="input-field" placeholder="Surname" required>
                     <input type="email" name="email" class="input-field" placeholder="Email" required>
-                    <input type="text" name="contact" class="input-field" placeholder="Contact" required>
+                    <input type="text" name="contact" class="input-field" placeholder="Contact" required maxlength="11" pattern="\d{11}" title="Cellphone">
                     <div class="input-field-container">
                         <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required autocomplete="new-password">
                         <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
