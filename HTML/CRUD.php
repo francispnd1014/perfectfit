@@ -53,7 +53,7 @@ if (isset($_POST['add_product'])) {
 
         if (count($image_paths) == count($product_images['name'])) {
             $image_paths_serialized = serialize($image_paths);
-            $insert = "INSERT INTO product (name, price, size, color, theme, analysis, tone, img, tally) VALUES ('$product_name', '$product_rent', '$product_size', '$color_to_use', '$product_theme', '$product_analysis', '$product_tone', '$image_paths_serialized', 0)";
+            $insert = "INSERT INTO product (name, price, size, color, theme, analysis, tone, img, status, tally) VALUES ('$product_name', '$product_rent', '$product_size', '$color_to_use', '$product_theme', '$product_analysis', '$product_tone', '$image_paths_serialized', 0, 0)";
             $upload = mysqli_query($conn, $insert);
             if ($upload) {
                 $message[] = 'New product added successfully.';
