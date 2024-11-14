@@ -219,7 +219,7 @@ $select = mysqli_query($conn, $select_query);
                                 <a href="../HTML/Account.php" class="sub-menu-link">
                                     <p>Profile</p>
                                 </a>
-                                <a href="logout.php" class="sub-menu-link">
+                                <a href="Logout.php" class="sub-menu-link">
                                     <p>Log Out</p>
                                 </a>
                             </div>
