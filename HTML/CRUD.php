@@ -3,6 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
+session_start();
 
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
@@ -39,15 +40,10 @@ if (isset($_POST['add_product'])) {
         $color_to_use = !empty($new_color) ? $new_color : $product_color;
         $image_paths = [];
 
-        $upload_dir = 'uploaded_img/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
-
         for ($i = 0; $i < count($product_images['name']); $i++) {
-            $product_image = basename($product_images['name'][$i]);
+            $product_image = $product_images['name'][$i];
             $product_image_tmp_name = $product_images['tmp_name'][$i];
-            $product_image_folder = $upload_dir . $product_image;
+            $product_image_folder = 'uploaded_img/' . $product_image;
 
             if (move_uploaded_file($product_image_tmp_name, $product_image_folder)) {
                 $image_paths[] = $product_image;
@@ -58,7 +54,7 @@ if (isset($_POST['add_product'])) {
 
         if (count($image_paths) == count($product_images['name'])) {
             $image_paths_serialized = serialize($image_paths);
-            $insert = "INSERT INTO product (name, price, size, color, theme, analysis, tone, img, tally, status) VALUES ('$product_name', '$product_rent', '$product_size', '$color_to_use', '$product_theme', '$product_analysis', '$product_tone', '$image_paths_serialized', 0, 0)";            
+            $insert = "INSERT INTO product (name, price, size, color, theme, analysis, tone, img, tally) VALUES ('$product_name', '$product_rent', '$product_size', '$color_to_use', '$product_theme', '$product_analysis', '$product_tone', '$image_paths_serialized', 0)";
             $upload = mysqli_query($conn, $insert);
             if ($upload) {
                 $message[] = 'New product added successfully.';
@@ -154,7 +150,7 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                             </select>
                             <h4>Select Size</h4>
                             <div class="checkbox-group">
-                                <label class="tones"><input type="checkbox" name="product_size[]" value="Extra Small"> Extra Small</label>
+                            <label class="tones"><input type="checkbox" name="product_size[]" value="Extra Small"> Extra Small</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Small"> Small</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Medium"> Medium</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Large"> Large</label>
@@ -185,7 +181,8 @@ $select = mysqli_query($conn, "SELECT * FROM product");
 
         <main class="content">
             <div class="product-display">
-            <button class="btn-add-product" id="btnAddProduct">Add New Product</button>
+                <button class="btn-add-product" id="btnAddProduct">Add New Product</button>
+
                 <?php while ($row = mysqli_fetch_assoc($select)) { ?>
                     <div class="card">
                         <div class="image">
@@ -221,43 +218,6 @@ $select = mysqli_query($conn, "SELECT * FROM product");
         </div>
     </div>
     <script>
-            document.addEventListener('DOMContentLoaded', function() {
-        var modal = document.getElementById("myModal");
-        var btn = document.getElementById("btnAddProduct");
-        var cancelBtn = document.getElementById("btnCancel");
-
-        // When the user clicks the button, open the modal 
-        btn.onclick = function() {
-            modal.style.display = "block";
-        }
-
-        // When the user clicks on the cancel button, close the modal
-        cancelBtn.onclick = function() {
-            modal.style.display = "none";
-        }
-
-        // When the user clicks anywhere outside of the modal, close it
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-    });
-
-    function toggleDropdown() {
-        var dropdown = document.getElementById("myDropdown");
-        dropdown.classList.toggle("show");
-    }
-
-    function showSelectColor() {
-        document.getElementById("select_color_div").style.display = "block";
-        document.getElementById("new_color_div").style.display = "none";
-    }
-
-    function showNewColor() {
-        document.getElementById("select_color_div").style.display = "none";
-        document.getElementById("new_color_div").style.display = "block";
-    }
         document.addEventListener('DOMContentLoaded', function() {
             var modal = document.getElementById("deleteModal");
             var span = document.getElementsByClassName("close")[0];
