@@ -173,7 +173,7 @@ if (isset($_GET['sort'])) {
             $select_query .= " ORDER BY price ASC";
             break;
         case 'rent-price-desc':
-            $select_query .= " ORDER BY price DESC";
+            $select_query .= " ORDER BY CAST(price AS UNSIGNED) DESC";
             break;
         default:
             $select_query .= " ORDER BY status ASC";
