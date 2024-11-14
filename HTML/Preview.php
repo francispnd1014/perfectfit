@@ -11,12 +11,14 @@ $username = "root";
 $password = "g8gbV0noL$3&fA6x-GAMER";
 $dbname = "perfectfit";
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// Check connection
+$conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    error_log("Connection failed: " . $conn->connect_error);
+    die("Database connection failed");
 }
 
 // Assuming $email is defined and sanitized
