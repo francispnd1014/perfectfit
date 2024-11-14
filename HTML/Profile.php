@@ -106,17 +106,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+
     if (isset($_POST['save-pass'])) {
         $currentPasswordInput = $_POST['current-password'];
         $newPassword = $_POST['new-password'];
         $repeatNewPassword = $_POST['repeat-new-password'];
-    
+
         // Verify the current password using password_verify
         if (password_verify($currentPasswordInput, $currentPassword)) {
             if ($newPassword === $repeatNewPassword) {
                 // Hash the new password
                 $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-                
+
                 // Update with hashed password
                 $update_password_query = "UPDATE users SET password='$hashedNewPassword' WHERE email='$email'";
                 if ($conn->query($update_password_query) === TRUE) {
@@ -149,28 +150,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <div class="banner">
         <div class="navbar">
-        <a href="../HTML/Home User.php"><img src="../IMAGES/RICH SABINIANS.png" class="logo">
-        <ul>
-                <li><a href="../HTML/Home User.php">Home</a></li>
-                <li><a href="../HTML/Shop User.php">Shop</a></li>
-                <li class="dropdown">
-                    <a href="#" class="dropbtn" onclick="toggleDropdown()"> <?php echo htmlspecialchars($fname); ?></a>
-                    <div id="myDropdown" class="dropdown-content">
-                        <div class="sub-menu">
-                            <div class="user-info">
-                                <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="Profile Picture" width="50" height="50">
-                                <h3><?php echo htmlspecialchars($fullname); ?></h3>
+            <a href="../HTML/Home User.php"><img src="../IMAGES/RICH SABINIANS.png" class="logo">
+                <ul>
+                    <li><a href="../HTML/Home User.php">Home</a></li>
+                    <li><a href="../HTML/Shop User.php">Shop</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropbtn" onclick="toggleDropdown()"> <?php echo htmlspecialchars($fname); ?></a>
+                        <div id="myDropdown" class="dropdown-content">
+                            <div class="sub-menu">
+                                <div class="user-info">
+                                    <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="Profile Picture" width="50" height="50">
+                                    <h3><?php echo htmlspecialchars($fullname); ?></h3>
+                                </div>
+                                <a href="../HTML/Account.php" class="sub-menu-link">
+                                    <p>Profile</p>
+                                </a>
+                                <a href="Logout.php" class="sub-menu-link">
+                                    <p>Log Out</p>
+                                </a>
                             </div>
-                            <a href="../HTML/Account.php" class="sub-menu-link">
-                                <p>Profile</p>
-                            </a>
-                            <a href="Logout.php" class="sub-menu-link">
-                                <p>Log Out</p>
-                            </a>
                         </div>
-                    </div>
-                </li>
-            </ul>
+                    </li>
+                </ul>
         </div>
         <div class="container">
             <div class="card">
@@ -275,24 +276,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         function showTab(tabName) {
-        var i;
-        var x = document.getElementsByClassName("tab-content");
-        var tabs = document.getElementsByClassName("list-group-item");
-        
-        // Remove active class from all tab contents
-        for (i = 0; i < x.length; i++) {
-            x[i].classList.remove("active");
+            var i;
+            var x = document.getElementsByClassName("tab-content");
+            var tabs = document.getElementsByClassName("list-group-item");
+
+            // Remove active class from all tab contents
+            for (i = 0; i < x.length; i++) {
+                x[i].classList.remove("active");
+            }
+
+            // Remove active class from all tabs
+            for (i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+
+            // Add active class to the clicked tab and corresponding tab content
+            document.getElementById(tabName).classList.add("active");
+            event.currentTarget.classList.add("active");
         }
-        
-        // Remove active class from all tabs
-        for (i = 0; i < tabs.length; i++) {
-            tabs[i].classList.remove("active");
-        }
-        
-        // Add active class to the clicked tab and corresponding tab content
-        document.getElementById(tabName).classList.add("active");
-        event.currentTarget.classList.add("active");
-    }
 
         var loadFile = function(event) {
             var output = document.getElementById('profile-img');
@@ -345,6 +346,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 popup.style.display = "none";
             }
         }
+        var loadFile = function(event) {
+            var output = document.getElementById('profile-img');
+            output.src = URL.createObjectURL(event.target.files[0]);
+        };
     </script>
 </body>
 
