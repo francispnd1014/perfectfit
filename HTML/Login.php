@@ -405,6 +405,13 @@ $conn->close();
             closeForgotPasswordModal();
         }
     }
+
+    function refreshPage() {
+        window.location.reload(true);
+    }
+
+    // Call the function to refresh the page
+    refreshPage();
     </script>
 </body>
 
