@@ -1,6 +1,6 @@
 <?php
 session_start();
-$conn = new mysqli("localhost", "root", "", "perfectfit");
+$conn = new mysqli("localhost", "root", "g8gbV0noL$3&fA6x-GAMER", "perfectfit");
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -216,6 +216,7 @@ $result_reservations = $conn->query($sql_reservations);
                                             <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
                                             <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
                                             <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                         </div>
                                     </div>
 
@@ -280,6 +281,7 @@ $result_reservations = $conn->query($sql_reservations);
                                             <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
                                             <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
                                             <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                         </div>
                                     </div>
 
@@ -291,7 +293,6 @@ $result_reservations = $conn->query($sql_reservations);
                                             <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
                                             <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
                                             <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
-                                            <p class="total-price"><strong>Reservation Fee (Paid):</strong> ₱<?php echo number_format($row['r_pay'], 2); ?></p>
                                         </div>
                                     </div>
                                     <div class="action-buttons">
@@ -351,6 +352,7 @@ $result_reservations = $conn->query($sql_reservations);
                                             <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
                                             <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
                                             <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                         </div>
                                     </div>
 
@@ -385,77 +387,78 @@ $result_reservations = $conn->query($sql_reservations);
             </div>
 
             <div class="tab-content" id="accepted-tab">
-    <?php
-    $currentGownName = null;
-    $result_all->data_seek(0);
-    while ($row = $result_all->fetch_assoc()):
-        if ($row['request'] == 'accepted' && !$row['reservation']): // Exclude reservation gowns
-            if ($currentGownName !== $row['gown_name']) {
+                <?php
+                $currentGownName = null;
+                $result_all->data_seek(0);
+                while ($row = $result_all->fetch_assoc()):
+                    if ($row['request'] == 'accepted' && !$row['reservation']): // Exclude reservation gowns
+                        if ($currentGownName !== $row['gown_name']) {
+                            if ($currentGownName !== null) {
+                                echo '</div>'; // Close previous gown group
+                            }
+                            $currentGownName = $row['gown_name'];
+                            echo '<div class="gown-group">';
+                            echo '<h2>' . htmlspecialchars($currentGownName) . '</h2>';
+                        }
+                ?>
+                        <div class="request-card">
+                            <div class="request-header">
+                                <div class="order-id">Order #<?php echo $row['id']; ?></div>
+                                <div class="status-badge status-<?php echo strtolower($row['request']); ?>">
+                                    <?php echo ucfirst($row['request']); ?>
+                                </div>
+                            </div>
+
+                            <div class="request-body">
+                                <div class="product-image">
+                                    <?php
+                                    $images = @unserialize($row['img']);
+                                    if ($images === false) {
+                                        $images = [$row['img']];
+                                    }
+                                    if (!empty($images)) {
+                                        echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                                    }
+                                    ?>
+                                </div>
+
+                                <div class="request-details">
+                                    <div class="customer-section">
+                                        <h3><i class="fas fa-user"></i> Customer Details</h3>
+                                        <div class="details-grid">
+                                            <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
+                                            <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
+                                            <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
+                                        </div>
+                                    </div>
+
+                                    <div class="order-section">
+                                        <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                                        <div class="details-grid">
+                                            <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
+                                            <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
+                                            <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
+                                            <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
+                                            <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
+                                        </div>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button class="receive-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'received')">
+                                            <i class="fas fa-box-check"></i> Order Received
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                <?php
+                    endif;
+                endwhile;
                 if ($currentGownName !== null) {
-                    echo '</div>'; // Close previous gown group
+                    echo '</div>'; // Close last gown group
                 }
-                $currentGownName = $row['gown_name'];
-                echo '<div class="gown-group">';
-                echo '<h2>' . htmlspecialchars($currentGownName) . '</h2>';
-            }
-    ?>
-            <div class="request-card">
-                <div class="request-header">
-                    <div class="order-id">Order #<?php echo $row['id']; ?></div>
-                    <div class="status-badge status-<?php echo strtolower($row['request']); ?>">
-                        <?php echo ucfirst($row['request']); ?>
-                    </div>
-                </div>
-
-                <div class="request-body">
-                    <div class="product-image">
-                        <?php
-                        $images = @unserialize($row['img']);
-                        if ($images === false) {
-                            $images = [$row['img']];
-                        }
-                        if (!empty($images)) {
-                            echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
-                        }
-                        ?>
-                    </div>
-
-                    <div class="request-details">
-                        <div class="customer-section">
-                            <h3><i class="fas fa-user"></i> Customer Details</h3>
-                            <div class="details-grid">
-                                <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
-                                <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
-                                <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
-                            </div>
-                        </div>
-
-                        <div class="order-section">
-                            <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
-                            <div class="details-grid">
-                                <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
-                                <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
-                                <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
-                                <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
-                                <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
-                            </div>
-                        </div>
-                        <div class="action-buttons">
-                            <button class="receive-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'received')">
-                                <i class="fas fa-box-check"></i> Order Received
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                ?>
             </div>
-    <?php
-        endif;
-    endwhile;
-    if ($currentGownName !== null) {
-        echo '</div>'; // Close last gown group
-    }
-    ?>
-</div>
 
             <div class="tab-content" id="received-tab">
                 <?php
@@ -491,6 +494,7 @@ $result_reservations = $conn->query($sql_reservations);
                                             <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
                                             <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
                                             <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                         </div>
                                     </div>
 
@@ -551,6 +555,7 @@ $result_reservations = $conn->query($sql_reservations);
                                             <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
                                             <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
                                             <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                         </div>
                                     </div>
 
@@ -643,93 +648,93 @@ $result_reservations = $conn->query($sql_reservations);
                 }
 
                 function updateStatus(id, status) {
-    if (status === 'declined') {
-        // Show decline reason modal
-        const declineModal = document.getElementById('declineModal');
-        const reasonSelect = document.getElementById('declineReason');
-        const otherReason = document.getElementById('otherReason');
-        const submitBtn = document.getElementById('submitDecline');
-        const cancelBtn = document.getElementById('cancelDecline');
+                    if (status === 'declined') {
+                        // Show decline reason modal
+                        const declineModal = document.getElementById('declineModal');
+                        const reasonSelect = document.getElementById('declineReason');
+                        const otherReason = document.getElementById('otherReason');
+                        const submitBtn = document.getElementById('submitDecline');
+                        const cancelBtn = document.getElementById('cancelDecline');
 
-        declineModal.style.display = 'block';
+                        declineModal.style.display = 'block';
 
-        reasonSelect.onchange = function() {
-            otherReason.style.display = this.value === 'Other' ? 'block' : 'none';
-        };
+                        reasonSelect.onchange = function() {
+                            otherReason.style.display = this.value === 'Other' ? 'block' : 'none';
+                        };
 
-        submitBtn.onclick = function() {
-            const reason = reasonSelect.value === 'Other' ? otherReason.value : reasonSelect.value;
-            if (!reason) {
-                alert('Please select or specify a reason');
-                return;
-            }
+                        submitBtn.onclick = function() {
+                            const reason = reasonSelect.value === 'Other' ? otherReason.value : reasonSelect.value;
+                            if (!reason) {
+                                alert('Please select or specify a reason');
+                                return;
+                            }
 
-            const formData = new FormData();
-            formData.append('action', 'update_status');
-            formData.append('id', id);
-            formData.append('status', status);
-            formData.append('reason', reason);
+                            const formData = new FormData();
+                            formData.append('action', 'update_status');
+                            formData.append('id', id);
+                            formData.append('status', status);
+                            formData.append('reason', reason);
 
-            fetch(window.location.href, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
+                            fetch(window.location.href, {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        location.reload();
+                                    } else {
+                                        alert('Error updating status');
+                                    }
+                                });
+                            declineModal.style.display = 'none';
+                        };
+
+                        cancelBtn.onclick = function() {
+                            declineModal.style.display = 'none';
+                        };
+
+                        window.onclick = function(event) {
+                            if (event.target == declineModal) {
+                                declineModal.style.display = 'none';
+                            }
+                        };
                     } else {
-                        alert('Error updating status');
+                        // Original confirmation modal for other statuses
+                        const modal = document.getElementById('confirmModal');
+                        const message = document.getElementById('confirmMessage');
+                        const yesBtn = document.getElementById('confirmYes');
+                        const noBtn = document.getElementById('confirmNo');
+
+                        message.textContent = 'Are you sure you want to ' + (status === 'payment' ? 'accept' : status) + ' this request?';
+                        modal.style.display = 'block';
+
+                        yesBtn.onclick = function() {
+                            const formData = new FormData();
+                            formData.append('action', 'update_status');
+                            formData.append('id', id);
+                            formData.append('status', status);
+
+                            fetch(window.location.href, {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        location.reload();
+                                    } else {
+                                        alert('Error updating status');
+                                    }
+                                });
+                            modal.style.display = 'none';
+                        };
+
+                        noBtn.onclick = function() {
+                            modal.style.display = 'none';
+                        };
                     }
-                });
-            declineModal.style.display = 'none';
-        };
-
-        cancelBtn.onclick = function() {
-            declineModal.style.display = 'none';
-        };
-
-        window.onclick = function(event) {
-            if (event.target == declineModal) {
-                declineModal.style.display = 'none';
-            }
-        };
-    } else {
-        // Original confirmation modal for other statuses
-        const modal = document.getElementById('confirmModal');
-        const message = document.getElementById('confirmMessage');
-        const yesBtn = document.getElementById('confirmYes');
-        const noBtn = document.getElementById('confirmNo');
-
-        message.textContent = 'Are you sure you want to ' + (status === 'payment' ? 'accept' : status) + ' this request?';
-        modal.style.display = 'block';
-
-        yesBtn.onclick = function() {
-            const formData = new FormData();
-            formData.append('action', 'update_status');
-            formData.append('id', id);
-            formData.append('status', status);
-
-            fetch(window.location.href, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error updating status');
-                    }
-                });
-            modal.style.display = 'none';
-        };
-
-        noBtn.onclick = function() {
-            modal.style.display = 'none';
-        };
-    }
-}
+                }
             </script>
 </body>
 

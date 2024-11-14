@@ -12,6 +12,17 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Fetch users' emails and full names from the database
+$query = "SELECT email, CONCAT(fname, ' ', sname) AS fullname FROM users";
+$result = $conn->query($query);
+
+$users = [];
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $users[] = $row;
+    }
+}
+
 // Fetch data from the database
 $usersResult = $conn->query("SELECT COUNT(*) AS count FROM users");
 $productsResult = $conn->query("SELECT COUNT(*) AS count FROM product");
@@ -103,12 +114,15 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
     </div>
     <div class="main-container">
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card" id="totalUsersCard">
                 <div class="stat-header">
                     <span class="stat-title">Total Users</span>
                     <span class="stat-icon pink"><i class="mdi mdi-account-multiple"></i></span>
                 </div>
                 <div class="stat-value"><?php echo $usersCount; ?></div>
+                <div class="see-users">
+                    <a class="stat-title" href="#" id="seeUsersLink">See Users</a>
+                </div>
             </div>
 
             <div class="stat-card">
@@ -211,8 +225,41 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
             </div>
         </div>
     </div>
-
+    <div id="usersModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 class="modal-title">Users List</h3>
+            <div class="modal-body">
+                <ul id="usersList">
+                    <?php foreach ($users as $user): ?>
+                        <li><?php echo htmlspecialchars($user['fullname']) . ' - ' . htmlspecialchars($user['email']); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+    </div>
     <script>
+        var users = <?php echo json_encode($users); ?>;
+        document.addEventListener('DOMContentLoaded', function() {
+            var totalUsersCard = document.getElementById('totalUsersCard');
+            var usersModal = document.getElementById('usersModal');
+            var closeModal = document.getElementsByClassName('close')[0];
+
+            totalUsersCard.onclick = function() {
+                usersModal.style.display = 'block';
+            }
+
+            closeModal.onclick = function() {
+                usersModal.style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target == usersModal) {
+                    usersModal.style.display = 'none';
+                }
+            }
+        });
+
         function toggleDropdown(event) {
             event.stopPropagation();
             var dropdown = event.currentTarget.parentElement;
