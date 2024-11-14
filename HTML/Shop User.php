@@ -167,10 +167,10 @@ if (isset($_GET['sort'])) {
     $sortOption = $_GET['sort'];
     switch ($sortOption) {
         case 'top-sales':
-            $select_query .= " ORDER BY tally DESC";
+            $select_query .= " ORDER BY CAST(tally AS UNSIGNED) DESC";
             break;
         case 'rent-price-asc':
-            $select_query .= " ORDER BY price ASC";
+            $select_query .= " ORDER BY CAST(price AS UNSIGNED) ASC";
             break;
         case 'rent-price-desc':
             $select_query .= " ORDER BY CAST(price AS UNSIGNED) DESC";
