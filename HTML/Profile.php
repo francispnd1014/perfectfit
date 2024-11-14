@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!empty($_FILES['profile-pic']['name'])) {
             // Handle profile picture upload
             $file_name = basename($_FILES["profile-pic"]["name"]);
+            $file_name = preg_replace("/[^a-zA-Z0-9.]/", "_", $file_name); // Sanitize file name
             $target_file = $target_dir . $file_name;
 
             // Use a safe file name and escape the string for SQL
@@ -107,12 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $_SESSION['errorMessage'] = "Error updating profile picture path: " . $conn->error;
                     }
                 } else {
-                    $_SESSION['errorMessage'] = "Sorry, there was an error uploading your file.";
+                    $_SESSION['errorMessage'] = "Sorry, there was an error uploading your file. Error: " . error_get_last()['message'];
                 }
             }
         }
     }
-
 
     if (isset($_POST['save-pass'])) {
         $currentPasswordInput = $_POST['current-password'];
