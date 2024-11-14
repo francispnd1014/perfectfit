@@ -165,6 +165,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rent_gown'])) {
     $email = $_SESSION['email'];
     $gownName = $gown_name;
 
+    // Validate and sanitize cellnumber
+    $cellnumber = filter_var($cellnumber, FILTER_SANITIZE_NUMBER_INT);
+    if (strlen($cellnumber) > 15) { // Adjust the length as per your database schema
+        echo "Cell number is too long.";
+        exit();
+    }
+
     // Insert rental details into the rent table with request status 'pending'
     $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, cellnumber, duedate, address, service, total, request) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
     $stmt->bind_param("sssssssd", $email, $gownName, $deliveryDate, $cellnumber, $returnDate, $deliveryAddress, $service, $total);
