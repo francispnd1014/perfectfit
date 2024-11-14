@@ -310,7 +310,6 @@ $conn->close();
     <!-- Verification Modal -->
     <div id="verificationModal" class="modal" style="display: <?php echo isset($_POST['verify_code']) || !empty($register_success) ? 'block' : 'none'; ?>;">
         <div class="modal-content">
-            <span class="close" onclick="closeVerificationModal()">&times;</span>
             <h2>Verify Your Email</h2>
             <p>Enter the verification code sent to your email:</p>
             <form id="verificationForm" method="post">
