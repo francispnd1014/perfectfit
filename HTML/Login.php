@@ -407,11 +407,16 @@ $conn->close();
     }
 
     function refreshPage() {
+    if (!localStorage.getItem('refreshed')) {
+        localStorage.setItem('refreshed', 'true');
         window.location.reload(true);
+    } else {
+        localStorage.removeItem('refreshed');
     }
+}
 
-    // Call the function to refresh the page
-    refreshPage();
+// Call the function to refresh the page
+refreshPage();
     </script>
 </body>
 
