@@ -36,43 +36,20 @@ if (isset($_POST['add_product'])) {
         $color_to_use = !empty($new_color) ? $new_color : $product_color;
         $image_paths = [];
 
+        $upload_dir = 'uploaded_img/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+
         for ($i = 0; $i < count($product_images['name']); $i++) {
-            $product_image = $product_images['name'][$i];
+            $product_image = basename($product_images['name'][$i]);
             $product_image_tmp_name = $product_images['tmp_name'][$i];
-            $product_image_folder = 'uploaded_img/' . $product_image;
+            $product_image_folder = $upload_dir . $product_image;
 
-            // Use a safe file name and escape the string for SQL
-            $safe_file_name = $conn->real_escape_string($product_image);
-
-            $uploadOk = 1;
-            $imageFileType = strtolower(pathinfo($product_image_folder, PATHINFO_EXTENSION));
-
-            // Check if image file is a valid image type
-            $check = getimagesize($product_image_tmp_name);
-            if ($check === false) {
-                $uploadOk = 0;
-                $message[] = 'File is not an image: ' . $product_image;
-            }
-
-            // Check file size (5MB maximum)
-            if ($product_images["size"][$i] > 5000000) {
-                $uploadOk = 0;
-                $message[] = 'Sorry, your file is too large: ' . $product_image;
-            }
-
-            // Allow only certain file formats
-            if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif") {
-                $uploadOk = 0;
-                $message[] = 'Sorry, only JPG, JPEG, PNG & GIF files are allowed: ' . $product_image;
-            }
-
-            // Check if upload is OK and move the file
-            if ($uploadOk == 1) {
-                if (move_uploaded_file($product_image_tmp_name, $product_image_folder)) {
-                    $image_paths[] = $safe_file_name;
-                } else {
-                    $message[] = 'Could not upload image: ' . $product_image;
-                }
+            if (move_uploaded_file($product_image_tmp_name, $product_image_folder)) {
+                $image_paths[] = $product_image;
+            } else {
+                $message[] = 'Could not upload image: ' . $product_image;
             }
         }
 
