@@ -173,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rent_gown'])) {
     }
 
     // Insert rental details into the rent table with request status 'pending'
-    $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, cellnumber, duedate, address, service, total, request) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+    $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, cellnumber, duedate, address, service, total, request, reservation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0)");
     $stmt->bind_param("sssssssd", $email, $gownName, $deliveryDate, $cellnumber, $returnDate, $deliveryAddress, $service, $total);
     $stmt->execute();
     $stmt->close();
