@@ -271,7 +271,6 @@ $conn->close();
                                 foreach ($images as $image) {
                                     echo '<div class="image-container" style="display: inline-block; position: relative; margin: 5px;">';
                                     echo '<img src="uploaded_img/' . htmlspecialchars($image) . '" alt="" style="width: 100px; height: 100px;">';
-                                    echo '<button type="button" class="delete-image-btn" onclick="deleteImage(\'' . $image . '\')" style="position: absolute; top: 0; right: 0; background: red; color: white; border: none; cursor: pointer;">X</button>';
                                     echo '</div>';
                                 }
                             }
