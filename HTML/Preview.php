@@ -565,7 +565,7 @@ $stmt->close();
                         <input class="int-delivery" type="text" id="address" name="address" required>
 
                         <label for="address">Cellphone Number:</label>
-                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" required>
+                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" required maxlength="11" pattern="\d{11}" required>
 
                         <label for="service">Service:</label>
                         <select class="int-delivery" id="service" name="service" required onchange="updateServiceFee()">
