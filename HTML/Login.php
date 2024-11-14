@@ -10,7 +10,7 @@ require '../PHPMailer-master/src/SMTP.php';
 
 $servername = "localhost";
 $username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
+$password = "";
 $dbname = "perfectfit";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -117,6 +117,7 @@ if (isset($_POST['submitr'])) {
             }
         } else {
             $register_error = "Error: " . $insert_query . "<br>" . $conn->error;
+            error_log("Database error: " . $conn->error); // Log the error
         }
     }
 }
