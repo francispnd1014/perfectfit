@@ -110,11 +110,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $currentPasswordInput = $_POST['current-password'];
         $newPassword = $_POST['new-password'];
         $repeatNewPassword = $_POST['repeat-new-password'];
-
-        // Verify the current password
-        if ($currentPasswordInput === $currentPassword) {
+    
+        // Verify the current password using password_verify
+        if (password_verify($currentPasswordInput, $currentPassword)) {
             if ($newPassword === $repeatNewPassword) {
-                $update_password_query = "UPDATE users SET password='$newPassword' WHERE email='$email'";
+                // Hash the new password
+                $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                
+                // Update with hashed password
+                $update_password_query = "UPDATE users SET password='$hashedNewPassword' WHERE email='$email'";
                 if ($conn->query($update_password_query) === TRUE) {
                     $_SESSION['successMessage'] = "Password updated successfully.";
                 } else {
@@ -127,9 +131,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['errorMessage'] = "Current password is incorrect.";
         }
     }
-
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit();
 }
 ?>
 
@@ -142,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="../IMAGES/FAV.png">
     <title>Edit Profile</title>
-    <link rel="stylesheet" href="../CSS/Profile.css">
+    <link rel="stylesheet" href="../CSS/profile.css">
 </head>
 
 <body>
@@ -335,6 +336,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         function cancelAction() {
             document.getElementById('popup').style.display = 'none';
             formToSubmit = null;
+        }
+
+        // Close the popup when clicking outside of the popup content
+        window.onclick = function(event) {
+            var popup = document.getElementById('popup');
+            if (event.target == popup) {
+                popup.style.display = "none";
+            }
         }
     </script>
 </body>
