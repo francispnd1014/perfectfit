@@ -12,6 +12,7 @@ if (!isset($_SESSION['email'])) {
     exit();
 }
 
+
 // Database connection parameters
 $servername = "localhost";
 $username = "root";
@@ -49,89 +50,124 @@ try {
     exit();
 }
 
-// Function to get the average color of the central part of the image
-function getFaceColor($imagePath) {
-    $imageData = file_get_contents($imagePath);
-    $image = imagecreatefromstring($imageData);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-    if (!$image) {
-        die("Failed to load image.");
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
+    // Debug information
+    error_log("Upload attempt started");
+    error_log("Upload error code: " . $_FILES['skin_image']['error']);
+    error_log("Temp file: " . $_FILES['skin_image']['tmp_name']);
+
+    $uploadDir = 'uploaded_img';
+    $imagePath = $uploadDir . '/' . basename($_FILES['skin_image']['name']);
+
+    // Check directory permissions
+    if (!file_exists($uploadDir)) {
+        if (!mkdir($uploadDir, 0777, true)) {
+            error_log("Failed to create directory");
+            die("Failed to create upload directory");
+        }
+        chmod($uploadDir, 0777);
     }
 
-    $width = imagesx($image);
-    $height = imagesy($image);
+    // Validate file
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!in_array($_FILES['skin_image']['type'], $allowedTypes)) {
+        die("Invalid file type. Please upload an image file.");
+    }
 
-    // Define a central area for approximation (e.g., 20% of the image center)
-    $centerX = $width * 0.4;
-    $centerY = $height * 0.4;
-    $sampleWidth = $width * 0.2;
-    $sampleHeight = $height * 0.2;
+    if (!move_uploaded_file($_FILES['skin_image']['tmp_name'], $imagePath)) {
+        error_log("Failed to move file. Error: " . error_get_last()['message']);
+        die("Failed to upload image. Please check file permissions.");
+    }
 
-    $totalR = $totalG = $totalB = 0;
-    $totalPixels = 0;
+    // Function to get the average color of the central part of the image
+    function getFaceColor($imagePath)
+    {
+        $imageData = file_get_contents($imagePath);
+        $image = imagecreatefromstring($imageData);
 
-    for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
-        for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
-            $rgb = imagecolorat($image, $x, $y);
-            $r = ($rgb >> 16) & 0xFF;
-            $g = ($rgb >> 8) & 0xFF;
-            $b = $rgb & 0xFF;
+        if (!$image) {
+            die("Failed to load image.");
+        }
 
-            $totalR += $r;
-            $totalG += $g;
-            $totalB += $b;
-            $totalPixels++;
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        // Define a central area for approximation (e.g., 20% of the image center)
+        $centerX = $width * 0.4;
+        $centerY = $height * 0.4;
+        $sampleWidth = $width * 0.2;
+        $sampleHeight = $height * 0.2;
+
+        $totalR = $totalG = $totalB = 0;
+        $totalPixels = 0;
+
+        for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
+            for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
+                $rgb = imagecolorat($image, $x, $y);
+                $r = ($rgb >> 16) & 0xFF;
+                $g = ($rgb >> 8) & 0xFF;
+                $b = $rgb & 0xFF;
+
+                $totalR += $r;
+                $totalG += $g;
+                $totalB += $b;
+                $totalPixels++;
+            }
+        }
+
+        imagedestroy($image);
+
+        return [
+            round($totalR / $totalPixels),
+            round($totalG / $totalPixels),
+            round($totalB / $totalPixels)
+        ];
+    }
+
+    function analyzeSkinTone($avgR, $avgG, $avgB)
+    {
+        if ($avgR >= 220 && $avgG >= 210 && $avgB >= 190) {
+            return "Very Fair";
+        } elseif ($avgR >= 200 && $avgG >= 180 && $avgB >= 160) {
+            return "Fair";
+        } elseif ($avgR >= 180 && $avgG >= 160 && $avgB >= 140) {
+            return "Medium Fair";
+        } elseif ($avgR >= 170 && $avgG >= 140 && $avgB >= 110) {
+            return "Medium";
+        } elseif ($avgR >= 150 && $avgG >= 120 && $avgB >= 90) {
+            return "Olive";
+        } elseif ($avgR >= 130 && $avgG >= 100 && $avgB >= 80) {
+            return "Naturally Brown";
+        } else {
+            return "Dark Brown";
         }
     }
 
-    imagedestroy($image);
+    // Handle the uploaded image
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
+        $imagePath = 'uploaded_img/' . basename($_FILES['skin_image']['name']);
 
-    return [
-        round($totalR / $totalPixels),
-        round($totalG / $totalPixels),
-        round($totalB / $totalPixels)
-    ];
-}
+        if (!is_dir('uploaded_img')) {
+            mkdir('uploaded_img', 0777, true);
+        }
 
-function analyzeSkinTone($avgR, $avgG, $avgB) {
-    if ($avgR >= 220 && $avgG >= 210 && $avgB >= 190) {
-        return "Very Fair";
-    } elseif ($avgR >= 200 && $avgG >= 180 && $avgB >= 160) {
-        return "Fair";
-    } elseif ($avgR >= 180 && $avgG >= 160 && $avgB >= 140) {
-        return "Medium Fair";
-    } elseif ($avgR >= 170 && $avgG >= 140 && $avgB >= 110) {
-        return "Medium";
-    } elseif ($avgR >= 150 && $avgG >= 120 && $avgB >= 90) {
-        return "Olive";
-    } elseif ($avgR >= 130 && $avgG >= 100 && $avgB >= 80) {
-        return "Naturally Brown";
-    } else {
-        return "Dark Brown";
-    }
-}
+        if (move_uploaded_file($_FILES['skin_image']['tmp_name'], $imagePath)) {
+            list($avgR, $avgG, $avgB) = getFaceColor($imagePath);
+            $skinTone = analyzeSkinTone($avgR, $avgG, $avgB);
 
-// Handle the uploaded image
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
-    $imagePath = 'uploaded_img/' . basename($_FILES['skin_image']['name']);
-
-    if (!is_dir('uploaded_img')) {
-        mkdir('uploaded_img', 0777, true);
-    }
-
-    if (move_uploaded_file($_FILES['skin_image']['tmp_name'], $imagePath)) {
-        list($avgR, $avgG, $avgB) = getFaceColor($imagePath);
-        $skinTone = analyzeSkinTone($avgR, $avgG, $avgB);
-
-        $_SESSION['result'] = [
-            'avgR' => $avgR,
-            'avgG' => $avgG,
-            'avgB' => $avgB,
-            'skinTone' => $skinTone,
-            'imagePath' => $imagePath
-        ];
-    } else {
-        echo "Failed to upload image.";
+            $_SESSION['result'] = [
+                'avgR' => $avgR,
+                'avgG' => $avgG,
+                'avgB' => $avgB,
+                'skinTone' => $skinTone,
+                'imagePath' => $imagePath
+            ];
+        } else {
+            echo "Failed to upload image.";
+        }
     }
 }
 ?>
@@ -175,9 +211,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
                 </ul>
         </div>
         <div class="analysis-container">
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
                 <h1>Upload an Image for Skin Tone Analysis</h1>
-                <input class="upload" type="file" name="skin_image" accept="image/*" required>
+                <input class="upload" type="file" name="skin_image" accept="image/*" required id="imageInput">
                 <button type="submit">Upload and Analyze</button>
             </form>
             <br>
@@ -198,6 +234,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
         </div>
     </div>
     <script>
+        function validateForm() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select a file');
+                return false;
+            }
+
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file');
+                return false;
+            }
+
+            if (file.size > 10485760) { // 10MB
+                alert('File is too large. Please select a file under 10MB');
+                return false;
+            }
+
+            return true;
+        }
+
         function toggleDropdown() {
             var dropdown = document.getElementById("myDropdown");
             dropdown.classList.toggle("show");
