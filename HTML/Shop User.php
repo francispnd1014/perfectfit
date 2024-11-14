@@ -142,7 +142,8 @@ if (!empty($selectedSizes)) {
     }
 }
 
-function log_user_interaction($conn, $email, $gown_id, $interaction_type) {
+function log_user_interaction($conn, $email, $gown_id, $interaction_type)
+{
     $stmt = $conn->prepare("INSERT INTO user_interactions (email, gown_id, interaction_type) VALUES (?, ?, ?)");
     $stmt->bind_param("sis", $email, $gown_id, $interaction_type);
     $stmt->execute();
@@ -299,7 +300,7 @@ $select = mysqli_query($conn, $select_query);
                         <div class="sort-container">
                             <p>Sort by</p>
                             <button id="top-sales-button" onclick="sortTopSales()">Top Sales</button>
-                            <select id="rent-sort-options" onchange="sortProducts('rent')">
+                            <select id="rent-sort-options" onchange="sortProducts()">
                                 <option value="" disabled selected>Rent Price</option>
                                 <option value="rent-price-asc">Low to High</option>
                                 <option value="rent-price-desc">High to Low</option>
@@ -412,17 +413,21 @@ $select = mysqli_query($conn, $select_query);
             }
         });
 
-        function sortProducts(type) {
-            let sortOption;
-            if (type === 'rent') {
-                sortOption = document.getElementById('rent-sort-options').value;
-            } else if (type === 'buy') {
-                sortOption = document.getElementById('buy-sort-options').value;
-            }
+        function sortProducts() {
+            const sortOption = document.getElementById('rent-sort-options').value;
             const params = new URLSearchParams(window.location.search);
             params.set('sort', sortOption);
             window.location.href = '?' + params.toString();
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const sortOption = params.get('sort');
+
+            if (sortOption) {
+                document.getElementById('rent-sort-options').value = sortOption;
+            }
+        });
 
         function toggleDropdown() {
             var dropdown = document.getElementById("myDropdown");
