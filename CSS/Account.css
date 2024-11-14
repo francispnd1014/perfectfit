@@ -387,8 +387,8 @@ html {
 }
 
 .photos img {
-  max-width: 248px;
-  max-height: 365px;
+  width: 248px;
+  height: 365px;
   display: block;
   height: 100%;
   object-fit: cover;
