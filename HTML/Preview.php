@@ -58,7 +58,8 @@ if ($result->num_rows > 0) {
 // Add this function after the database connection setup
 function getNextAvailableDate($conn, $gown_name)
 {
-    $query = "SELECT duedate FROM rent 
+    // Check if the gown is reserved
+    $query = "SELECT duedate, reservation FROM rent 
               WHERE gownname_rented = ? AND request = 'accepted'
               ORDER BY duedate DESC LIMIT 1";
 
@@ -69,12 +70,20 @@ function getNextAvailableDate($conn, $gown_name)
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
-        $duedate = new DateTime($row['duedate']);
-        $duedate->modify('+1 week'); // Add 1 week grace period
-        return $duedate->format('Y-m-d');
+        if ($row['reservation']) {
+            // If the gown is reserved, set the next available date to current date + 4 days
+            $date = new DateTime();
+            $date->modify('+4 days');
+            return $date->format('Y-m-d');
+        } else {
+            // If the gown is not reserved, proceed with the usual logic
+            $duedate = new DateTime($row['duedate']);
+            $duedate->modify('+1 week'); // Add 1 week grace period
+            return $duedate->format('Y-m-d');
+        }
     }
 
-    // If no existing rentals, return current date + 4 days
+    // If no existing rentals or reservations, return current date + 4 days
     $date = new DateTime();
     $date->modify('+4 days');
     return $date->format('Y-m-d');
@@ -145,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['favorite'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rent_gown'])) {
     $deliveryDate = $_POST['date_rented'];
     $returnDate = $_POST['duedate'];
+    $cellnumber = $_POST['cellnumber'];
     $deliveryAddress = $_POST['address'];
     $service = $_POST['service'];
     $total = floatval(str_replace(',', '', $_POST['total_price'])); // Remove commas and convert to float
@@ -153,8 +163,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rent_gown'])) {
     $gownName = $gown_name;
 
     // Insert rental details into the rent table with request status 'pending'
-    $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, duedate, address, service, total, request) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')");
-    $stmt->bind_param("sssssss", $email, $gownName, $deliveryDate, $returnDate, $deliveryAddress, $service, $total);
+    $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, cellnumber, duedate, address, service, total, request) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
+    $stmt->bind_param("sssssssd", $email, $gownName, $deliveryDate, $cellnumber, $returnDate, $deliveryAddress, $service, $total);
     $stmt->execute();
     $stmt->close();
 
@@ -171,16 +181,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_gown'])) {
     $deliveryDate = $_POST['date_rented'];
     $returnDate = $_POST['duedate'];
     $deliveryAddress = $_POST['address'];
+    $cellnumber = $_POST['cellnumber'];
     $service = $_POST['service'];
-    $total = $_POST['total'];
-    $totalToPayNow = $_POST['r_pay'];
+    $total = floatval(str_replace(',', '', $_POST['total_price'])); // Remove commas and convert to float
     $fullName = $_SESSION['fullname'];
     $email = $_SESSION['email'];
     $gownName = $gown_name;
 
     // Insert reservation details
-    $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, duedate, address, service, total, r_pay, request, reservation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'accepted', TRUE)");
-    $stmt->bind_param("ssssssdd", $email, $gownName, $deliveryDate, $returnDate, $deliveryAddress, $service, $total, $totalToPayNow);
+    $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, duedate, cellnumber, address, service, total, request, reservation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'accepted', TRUE)");
+    $stmt->bind_param("sssssssd", $email, $gownName, $deliveryDate, $returnDate, $cellnumber, $deliveryAddress, $service, $total);
     $stmt->execute();
     $stmt->close();
 
@@ -192,7 +202,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_gown'])) {
         });
     </script>";
 }
-
 $query = "SELECT theme, size, analysis, tone, img, price, name, tally FROM product WHERE id = $gown_id";
 $result = $conn->query($query);
 
@@ -518,91 +527,91 @@ $stmt->close();
             echo '</div>';
         }
         ?>
-        <!-- Add this modal structure before the closing </body> tag -->
-        <div id="rentModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <div class="modal-columns">
-                    <form method="POST" class="rent-form">
-                        <label for="date_rented">Date of Delivery:</label>
-                        <input class="int-delivery" type="date" id="date_rented" name="date_rented" required
-                            <?php
-                            $nextAvailable = getNextAvailableDate($conn, $gown_name);
-                            echo 'min="' . $nextAvailable . '"';
-                            ?>>
-                        <div class="availability-info">
-                            <?php if ($gown_status == 1): ?>
-                                <p class="notice">This gown will be available from <?php echo date('F j, Y', strtotime($nextAvailable)); ?></p>
-                            <?php endif; ?>
-                        </div>
+<!-- Add this modal structure before the closing </body> tag -->
+<div id="rentModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="modal-columns">
+            <form method="POST" class="rent-form">
+                <label for="date_rented">Date of Delivery:</label>
+                <input class="int-delivery" type="date" id="date_rented" name="date_rented" required
+    <?php
+    $nextAvailable = getNextAvailableDate($conn, $gown_name);
+    echo 'min="' . $nextAvailable . '"';
+    ?>>
+<div class="availability-info">
+    <?php if ($gown_status == 1): ?>
+        <p class="notice">This gown will be available from <?php echo date('F j, Y', strtotime($nextAvailable)); ?></p>
+    <?php endif; ?>
+</div>
 
-                        <label for="duedate">Date of Return:</label>
-                        <input class="int-delivery" type="date" id="duedate" name="duedate" required>
+                <label for="duedate">Date of Return:</label>
+                <input class="int-delivery" type="date" id="duedate" name="duedate" required>
 
-                        <label for="address">Delivery Address:</label>
-                        <input class="int-delivery" type="text" id="address" name="address" required>
+                <label for="address">Delivery Address:</label>
+                <input class="int-delivery" type="text" id="address" name="address" required>
 
-                        <label for="service">Service:</label>
-                        <select class="int-delivery" id="service" name="service" required onchange="updateServiceFee()">
-                            <option value="delivery">Delivery</option>
-                            <option value="pickup">Pickup</option>
-                        </select>
-                        <div class="price-details">
-                            <p>Rent Price: <span class="price">₱<?php echo number_format($gown_rent, 2, '.', ','); ?></span></p>
-                            <p>Service Fee: <span class="price" id="service-fee">₱<?php echo number_format($service_fee, 2, '.', ','); ?></span></p>
-                            <p>Additional Fee (Deposit): <span class="price">₱<?php echo number_format(
-                                                                                    2000,
-                                                                                    2,
-                                                                                    '.',
-                                                                                    ','
-                                                                                ); ?></span></p>
-                            <p>Total: <span class="price" id="total-price">₱<?php echo number_format($total_price, 2, '.', ','); ?></span></p>
-                        </div>
-                        <input type="hidden" id="total-price-hidden" name="total_price" value="<?php echo number_format($total_price, 2, '.', ','); ?>">
-                        <button class="btn-delivery" type="submit" name="rent_gown">Rent Now</button>
-                    </form>
+                <label for="address">Cellphone Number:</label>
+                <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" required>
+
+                <label for="service">Service:</label>
+                <select class="int-delivery" id="service" name="service" required onchange="updateServiceFee()">
+                    <option value="delivery">Delivery</option>
+                    <option value="pickup">Pickup</option>
+                </select>
+                <div class="price-details">
+                    <p>Rent Price: <span class="price">₱<?php echo number_format($gown_rent, 2, '.', ','); ?></span></p>
+                    <p>Service Fee: <span class="price" id="service-fee">₱<?php echo number_format($service_fee, 2, '.', ','); ?></span></p>
+                    <p>Additional Fee (Deposit): <span class="price">₱<?php echo number_format(2000, 2, '.', ','); ?></span></p>
+                    <p>Total (COD): <span class="price" id="total-price">₱<?php echo number_format($total_price, 2, '.', ','); ?></span></p>
                 </div>
-            </div>
+                <input type="hidden" id="total-price-hidden" name="total_price" value="<?php echo number_format($total_price, 2, '.', ','); ?>">
+                <button class="btn-delivery" type="submit" name="rent_gown">Rent Now</button>
+                <p class="notice">*Note: Online payment is not yet available. Please pay upon delivery.</p>
+            </form>
         </div>
-        <div id="reservationModal" class="modal">
-            <div class="modal-content">
-                <span class="close-reservation">&times;</span>
-                <div class="modal-columns">
-                    <form method="POST" class="rent-form">
-                        <label for="reservation_date">Date of Reservation:</label>
-                        <input class="int-delivery" type="date" id="reservation_date" name="date_rented" required>
-                        <div class="availability-info">
-                            <p class="notice">Reservation must be at least 2 months from today</p>
-                        </div>
-
-                        <label for="reservation_return">Date of Return:</label>
-                        <input class="int-delivery" type="date" id="reservation_return" name="duedate" required>
-
-                        <label for="reservation_address">Delivery Address:</label>
-                        <input class="int-delivery" type="text" id="reservation_address" name="address" required>
-
-                        <label for="reservation_service">Service:</label>
-                        <select class="int-delivery" id="reservation_service" name="service" required onchange="updateReservationFee()">
-                            <option value="delivery">Delivery</option>
-                            <option value="pickup">Pickup</option>
-                        </select>
-
-                        <div class="price-details">
-                            <p>Reservation Fee: <span class="price">₱4,000.00</span></p>
-                            <p>Service Fee: <span class="price" id="reservation-service-fee">₱200.00</span></p>
-                            <p>Deposit: <span class="price">₱2,000.00</span></p>
-                            <p class="notice">*Reservation fee will be deducted from the final rent price of ₱<?php echo number_format($gown_rent, 2); ?></p>
-                            <p>Total to Pay Now: <span class="price" id="reservation-total">₱6,200.00</span></p>
-                            <p>Total with Deductions: <span class="price" id="total-with-deductions">₱<?php echo number_format($gown_rent - 6200, 2); ?></span></p>
-                        </div>
-                        <input type="hidden" name="reservation" value="true">
-                        <input type="hidden" id="reservation-total-hidden" name="r_pay" value="6200">
-                        <input type="hidden" id="total-with-deductions-hidden" name="total" value="<?php echo $gown_rent - 6200; ?>">
-                        <button class="btn-delivery" type="submit" name="reserve_gown">Reserve Now</button>
-                    </form>
+    </div>
+</div>
+<div id="reservationModal" class="modal">
+    <div class="modal-content">
+        <span class="close-reservation">&times;</span>
+        <div class="modal-columns">
+            <form method="POST" class="rent-form">
+                <label for="reservation_date">Date of Reservation:</label>
+                <input class="int-delivery" type="date" id="reservation_date" name="date_rented" required>
+                <div class="availability-info">
+                    <p class="notice">Reservation must be at least 2 months from today</p>
                 </div>
-            </div>
+
+                <label for="reservation_return">Date of Return:</label>
+                <input class="int-delivery" type="date" id="reservation_return" name="duedate" required>
+
+                <label for="reservation_address">Delivery Address:</label>
+                <input class="int-delivery" type="text" id="reservation_address" name="address" required>
+                
+                <label for="address">Cellphone Number:</label>
+                <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" required>
+
+                <label for="reservation_service">Service:</label>
+                <select class="int-delivery" id="reservation_service" name="service" required onchange="updateReservationFee()">
+                    <option value="delivery">Delivery</option>
+                    <option value="pickup">Pickup</option>
+                </select>
+
+                <div class="price-details">
+                    <p>Rent Price: <span class="price">₱<?php echo number_format($gown_rent, 2, '.', ','); ?></span></p>
+                    <p>Service Fee: <span class="price" id="reservation-service-fee">₱200.00</span></p>
+                    <p>Additional Fee (Deposit): <span class="price">₱2,000.00</span></p>
+                    <p>Total (COD): <span class="price" id="reservation-total-price">₱<?php echo number_format($gown_rent + 200 + 2000, 2, '.', ','); ?></span></p>
+                </div>
+                <input type="hidden" name="reservation" value="true">
+                <input type="hidden" id="reservation-total-price-hidden" name="total_price" value="<?php echo number_format($gown_rent + 200 + 2000, 2, '.', ','); ?>">
+                <button class="btn-delivery" type="submit" name="reserve_gown">Reserve Now</button>
+                <p class="notice">*Note: Online payment is not yet available. Please pay upon delivery.</p>
+            </form>
         </div>
+    </div>
+</div>
         <div id="successModal" class="modal">
             <div class="modal-content">
                 <span class="close">&times;</span>
@@ -614,6 +623,10 @@ $stmt->close();
                 <div class="details-container">
                     <span class="details-label">Email:</span>
                     <span class="details-value"><?php echo isset($email) ? htmlspecialchars($email) : ''; ?></span>
+                </div>
+                <div class="details-container">
+                    <span class="details-label">Cellphone Number:</span>
+                    <span class="details-value"><?php echo isset($cellnumber) ? htmlspecialchars($cellnumber) : ''; ?></span>
                 </div>
                 <div class="details-container">
                     <span class="details-label">Gown Name:</span>
@@ -653,75 +666,66 @@ $stmt->close();
                     <span class="details-label">Total:</span>
                     <span class="details-value"><?php echo isset($total) ? '₱' . number_format($total, 2, '.', ',') : ''; ?></span>
                 </div>
-                <div class="details-container">
-                    <span class="details-label">Reference Number (Pay to this Number):</span>
-                    <span class="details-value">0916 460 5072</span>
-                </div>
                 <button class="btn-confirm" id="goBackButton">Go back to shop</button>
             </div>
         </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var reservationModal = document.getElementById("reservationModal");
-                var reserveBtn = document.querySelector(".reserve-btn");
-                var spanCloseReservation = document.getElementsByClassName("close-reservation")[0];
+document.addEventListener('DOMContentLoaded', function() {
+    var reservationModal = document.getElementById("reservationModal");
+    var reserveBtn = document.querySelector(".reserve-btn");
+    var spanCloseReservation = document.getElementsByClassName("close-reservation")[0];
 
-                reserveBtn.onclick = function() {
-                    reservationModal.style.display = "block";
+    reserveBtn.onclick = function() {
+        reservationModal.style.display = "block";
 
-                    // Set minimum date to 2 months from today
-                    var today = new Date();
-                    today.setMonth(today.getMonth() + 2);
-                    today.setDate(today.getDate() + 1);
-                    var minDate = today.toISOString().split('T')[0];
-                    document.getElementById('reservation_date').min = minDate;
-                    document.getElementById('reservation_return').min = minDate; // Set min date for return date
-                }
+        // Set minimum date to 2 months from today
+        var today = new Date();
+        today.setMonth(today.getMonth() + 2);
+        today.setDate(today.getDate() + 1);
+        var minDate = today.toISOString().split('T')[0];
+        document.getElementById('reservation_date').min = minDate;
+        document.getElementById('reservation_return').min = minDate; // Set min date for return date
+    }
 
-                spanCloseReservation.onclick = function() {
-                    reservationModal.style.display = "none";
-                }
+    spanCloseReservation.onclick = function() {
+        reservationModal.style.display = "none";
+    }
 
-                function updateReservationFee() {
-                    var serviceSelect = document.getElementById("reservation_service");
-                    var serviceFee = serviceSelect.value === "pickup" ? 0 : 200;
-                    var reservationFee = 4000;
-                    var deposit = 2000;
-                    var gownRent = <?php echo $gown_rent; ?>;
+    function updateReservationFee() {
+        var serviceSelect = document.getElementById("reservation_service");
+        var serviceFee = serviceSelect.value === "pickup" ? 0 : 200;
+        var gownRent = <?php echo $gown_rent; ?>;
+        var deposit = 2000;
 
-                    document.getElementById("reservation-service-fee").textContent =
-                        serviceFee === 0 ? '₱0.00' : '₱200.00';
+        document.getElementById("reservation-service-fee").textContent =
+            serviceFee === 0 ? '₱0.00' : '₱200.00';
 
-                    var totalToPayNow = reservationFee + serviceFee + deposit;
-                    var totalWithDeductions = gownRent - totalToPayNow;
+        var totalPrice = gownRent + serviceFee + deposit;
 
-                    document.getElementById("reservation-total").textContent =
-                        '₱' + totalToPayNow.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                    document.getElementById("reservation-total-hidden").value = totalToPayNow;
-                    document.getElementById("total-with-deductions").textContent =
-                        '₱' + totalWithDeductions.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                    document.getElementById("total-with-deductions-hidden").value = totalWithDeductions;
-                }
+        document.getElementById("reservation-total-price").textContent =
+            '₱' + totalPrice.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        document.getElementById("reservation-total-price-hidden").value = totalPrice.toFixed(2);
+    }
 
-                // Add validation for reservation dates
-                document.getElementById('reservation_date').addEventListener('change', function() {
-                    var selectedDate = new Date(this.value);
-                    var minDate = new Date();
-                    minDate.setMonth(minDate.getMonth() + 2);
+    // Add validation for reservation dates
+    document.getElementById('reservation_date').addEventListener('change', function() {
+        var selectedDate = new Date(this.value);
+        var minDate = new Date();
+        minDate.setMonth(minDate.getMonth() + 2);
 
-                    if (selectedDate < minDate) {
-                        alert('Reservation must be at least 2 months from today');
-                        this.value = '';
-                    }
-                });
+        if (selectedDate < minDate) {
+            alert('Reservation must be at least 2 months from today');
+            this.value = '';
+        }
+    });
 
-                // Call updateReservationFee on page load to set the initial values
-                updateReservationFee();
+    // Call updateReservationFee on page load to set the initial values
+    updateReservationFee();
 
-                // Add event listener to update the service fee when the service option changes
-                document.getElementById("reservation_service").addEventListener('change', updateReservationFee);
-            });
+    // Add event listener to update the service fee when the service option changes
+    document.getElementById("reservation_service").addEventListener('change', updateReservationFee);
+});
             document.addEventListener('DOMContentLoaded', function() {
                 var dateInput = document.getElementById('date_rented');
                 var nextAvailable = '<?php echo $nextAvailable; ?>';
