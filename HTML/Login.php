@@ -273,7 +273,7 @@ $conn->close();
             <div class="form-container sign-in">
                 <form id="login" class="input-group" action="" method="post" autocomplete="on">
                     <a href="../HTML/Index.php"><img src="../IMAGES/RICH SABINIANS.png" class="logo"></a>
-                    <h1>Sign In</h1>
+                    <h1>Sign dasdaIn</h1>
                     <input type="email" name="email" class="input-field" placeholder="Email" required>
                     <div class="input-field-container">
                         <input type="password" name="password" id="login_password" class="input-field" placeholder="Password" required>
