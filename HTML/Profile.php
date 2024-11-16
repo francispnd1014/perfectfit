@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
 
 if (!isset($_SESSION['email'])) {
@@ -9,16 +6,8 @@ if (!isset($_SESSION['email'])) {
     exit();
 }
 
-$servername = "localhost";
-$username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
-$dbname = "perfectfit";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'connection.php';
+$conn = Database::getInstance()->getConnection();
 
 $email = $_SESSION['email'];
 $query = "SELECT * FROM users WHERE email='$email'";
