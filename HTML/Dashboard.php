@@ -1,16 +1,13 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
-$dbname = "perfectfit";
+session_start();
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+if (!isset($_SESSION['email'])) {
+    header("Location: Login.php");
+    exit();
 }
+
+require_once 'connection.php';
+$conn = Database::getInstance()->getConnection();
 
 // Fetch users' emails and full names from the database
 $query = "SELECT email, CONCAT(fname, ' ', sname) AS fullname FROM users";
