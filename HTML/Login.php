@@ -13,19 +13,13 @@ require '../PHPMailer-master/src/SMTP.php';
 
 $servername = "localhost";
 $username = "root";
-$password = "g8gbV0noL$3&fA6x";
+$password = "g8gbV0noL$3&fA6x-GAMER";
 $dbname = "perfectfit";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
-}
-
-function cleanupExpiredCodes($conn) {
-    $cleanup_query = "UPDATE users SET verification_code = NULL, verification_expiry = NULL 
-                     WHERE verification_expiry < NOW() AND is_verified = 0";
-    $conn->query($cleanup_query);
 }
 
 $login_error = '';
@@ -91,13 +85,10 @@ if (isset($_POST['submitr'])) {
 
         // Generate 6-digit verification code
         $verification_code = rand(100000, 999999);
-        $hashed_verification_code = password_hash($verification_code, PASSWORD_DEFAULT);
-        $expiry_time = date('Y-m-d H:i:s', strtotime('+24 hours')); // 24 hour expiry
-        
+
         // Insert user details with hashed password
-        $insert_query = "INSERT INTO users (fname, sname, email, contact, password, pfp, verification_code, is_verified, verification_expiry) 
-        VALUES ('$fname', '$sname', '$email', '$contact', '$hashed_password', '$default_pfp', '$hashed_verification_code', 0, '$expiry_time')";
-        
+        $insert_query = "INSERT INTO users (fname, sname, email, contact, password, pfp, verification_code, is_verified) VALUES ('$fname', '$sname', '$email', '$contact', '$hashed_password', '$default_pfp', '$verification_code', 0)";
+
         if ($conn->query($insert_query) === TRUE) {
             // Send verification email using PHPMailer
             $mail = new PHPMailer(true);
@@ -119,7 +110,7 @@ if (isset($_POST['submitr'])) {
                 // Content
                 $mail->isHTML(true);
                 $mail->Subject = 'Verify your email address';
-                $mail->Body = "Your verification code is: <strong>" . $verification_code . "</strong>";
+                $mail->Body    = "Your verification code is: <strong>" . $verification_code . "</strong>";
 
                 $mail->send();
                 $register_success = "Successfully registered! Please check your email to verify your account.";
@@ -129,6 +120,7 @@ if (isset($_POST['submitr'])) {
             }
         } else {
             $register_error = "Error: " . $insert_query . "<br>" . $conn->error;
+            error_log("Database error: " . $conn->error); // Log the error
         }
     }
 }
@@ -170,6 +162,7 @@ if (isset($_POST['forgot_submit'])) {
             $mail->isHTML(true);
             $mail->Subject = 'Password Reset Request';
             $mail->Body    = "Click the link to reset your password: <a href='http://app-perfectfit.com/HTML/Forgot.php?token=$token'>Reset Password</a>";
+
             $mail->send();
             echo "Password reset link has been sent to your email.";
         } catch (Exception $e) {
@@ -215,21 +208,16 @@ if (isset($_GET['token'])) {
 
 // Verification Code Handling
 if (isset($_POST['verify_code'])) {
-    cleanupExpiredCodes($conn);
     $entered_code = $_POST['verification_code'];
     $email = $_SESSION['email'];
 
-    $sql = "SELECT * FROM users WHERE email='$email' AND verification_expiry > NOW()";
+    $sql = "SELECT * FROM users WHERE email='$email'";
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $user_data = $result->fetch_assoc();
-        if (password_verify($entered_code, $user_data['verification_code'])) {
-            $update_sql = "UPDATE users SET 
-                          is_verified = 1, 
-                          verification_code = NULL,
-                          verification_expiry = NULL 
-                          WHERE email='$email'";
+        if ($user_data['verification_code'] == $entered_code) {
+            $update_sql = "UPDATE users SET is_verified = 1 WHERE email='$email'";
             $conn->query($update_sql);
             header("Location: Home User.php");
             exit();
@@ -237,7 +225,7 @@ if (isset($_POST['verify_code'])) {
             $verification_error = "Invalid verification code.";
         }
     } else {
-        $verification_error = "Verification code expired or user not found.";
+        $verification_error = "User not found.";
     }
 }
 
