@@ -24,9 +24,8 @@ body {
     position: relative;
     overflow: hidden;
     margin: 10% auto;
-    min-width: 768px;
-    max-width: 768px;
-    /* max-width: 100%; */
+    width: 768px;
+    max-width: 100%;
     min-height: 480px;
 }
 
@@ -352,3 +351,22 @@ body {
     width: 50%;
 }
 
+@media screen and (max-width: 768px) {
+    .logo {
+        width: 190px;
+        cursor: pointer;
+    }
+    h1{
+        font-size: 25px;
+    }
+    .container form {
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 0 5px;
+        height: 100%;
+    }
+    
+}
