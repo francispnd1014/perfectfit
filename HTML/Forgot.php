@@ -1,7 +1,7 @@
 <?php
 $servername = "localhost";
 $username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
+$password = "";
 $dbname = "perfectfit";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -11,14 +11,31 @@ if ($conn->connect_error) {
 }
 
 if (isset($_GET['token'])) {
-    $token = $_GET['token'];
+    $provided_token = $_GET['token'];
 
-    // Verify the token
-    $sql = "SELECT email FROM users WHERE reset_token='$token'";
+    // Query to find user with matching hashed token and valid expiry time
+    $sql = "SELECT email, reset_token, token_expiry FROM users WHERE reset_token IS NOT NULL";
     $result = $conn->query($sql);
-    $email = $result->fetch_assoc()['email'];
+    $user_found = false;
 
-    if ($email) {
+    while($row = $result->fetch_assoc()) {
+        // Check if the token is expired
+        if (new DateTime() > new DateTime($row['token_expiry'])) {
+            // Token is expired, clear it from the database
+            $sql = "UPDATE users SET reset_token=NULL, token_expiry=NULL WHERE email='" . $row['email'] . "'";
+            $conn->query($sql);
+            continue;
+        }
+
+        // Verify the token against stored hash
+        if (password_verify($provided_token, $row['reset_token'])) {
+            $email = $row['email'];
+            $user_found = true;
+            break;
+        }
+    }
+
+    if ($user_found) {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $newPassword = $_POST['new_password'];
             $confirmPassword = $_POST['confirm_password'];
@@ -27,7 +44,7 @@ if (isset($_GET['token'])) {
                 $hashed_password = password_hash($newPassword, PASSWORD_DEFAULT);
 
                 // Update the password in the database
-                $sql = "UPDATE users SET password='$hashed_password', reset_token=NULL WHERE email='$email'";
+                $sql = "UPDATE users SET password='$hashed_password', reset_token=NULL, token_expiry=NULL WHERE email='$email'";
                 $conn->query($sql);
 
                 // Display the modal

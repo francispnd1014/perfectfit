@@ -129,16 +129,18 @@ if (isset($_POST['forgot_submit'])) {
     $forgot_email = $_POST['forgot_email'];
     $forgot_email = mysqli_real_escape_string($conn, $forgot_email);
 
-    // Check if the email exists in the database
-    $sql = "SELECT * FROM users WHERE email='$forgot_email'";
+    // Check if the email exists and doesn't already have a reset token
+    $sql = "SELECT * FROM users WHERE email='$forgot_email' AND reset_token IS NULL";
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $user_data = $result->fetch_assoc();
         $token = bin2hex(random_bytes(50)); // Generate a unique token
+        $hashed_token = password_hash($token, PASSWORD_DEFAULT); // Hash the token
 
-        // Store the token in the database
-        $sql = "UPDATE users SET reset_token='$token' WHERE email='$forgot_email'";
+        // Store the hashed token in the database
+        $expiry_time = date('Y-m-d H:i:s', strtotime('+1 hour')); // 1 hour expiry
+        $sql = "UPDATE users SET reset_token='$hashed_token', token_expiry='$expiry_time' WHERE email='$forgot_email'";
         $conn->query($sql);
 
         // Send the reset email using PHPMailer
@@ -149,8 +151,8 @@ if (isset($_POST['forgot_submit'])) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'richsabinianpampang@gmail.com'; // Your email
-            $mail->Password = 'nqryqhxsnksaxmvv'; // Your email password
+            $mail->Username = 'richsabinianpampang@gmail.com';
+            $mail->Password = 'nqryqhxsnksaxmvv';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
@@ -161,15 +163,17 @@ if (isset($_POST['forgot_submit'])) {
             // Content
             $mail->isHTML(true);
             $mail->Subject = 'Password Reset Request';
-            $mail->Body    = "Click the link to reset your password: <a href='http://localhost/PERFECTFIT/HTML/Forgot.php?token=$token'>Reset Password</a>";
+            $mail->Body = "Click the link to reset your password: <a href='http://localhost/HTML/Forgot.php?token=$token'>Reset Password</a>";
 
             $mail->send();
-            echo "Password reset link has been sent to your email.";
+            echo "<div class='success-message'>If an account exists with this email, a password reset link will be sent.</div>";
         } catch (Exception $e) {
-            echo "Password reset email could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            // Don't expose error details to user
+            echo "<div class='error-message'>An error occurred. Please try again later.</div>";
         }
     } else {
-        echo "No user found with the given email.";
+        // Don't reveal if email exists or not
+        echo "<div class='info-message'>If an account exists with this email, a password reset link will be sent.</div>";
     }
 }
 
