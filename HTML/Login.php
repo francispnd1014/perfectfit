@@ -14,7 +14,8 @@ require '../PHPMailer-master/src/SMTP.php';
 require_once 'connection.php';
 $conn = Database::getInstance()->getConnection();
 
-function cleanupExpiredCodes($conn) {
+function cleanupExpiredCodes($conn)
+{
     $cleanup_query = "UPDATE users SET verification_code = NULL, verification_expiry = NULL 
                      WHERE verification_expiry < NOW() AND is_verified = 0";
     $conn->query($cleanup_query);
@@ -85,11 +86,11 @@ if (isset($_POST['submitr'])) {
         $verification_code = rand(100000, 999999);
         $hashed_verification_code = password_hash($verification_code, PASSWORD_DEFAULT);
         $expiry_time = date('Y-m-d H:i:s', strtotime('+24 hours')); // 24 hour expiry
-        
+
         // Insert user details with hashed password
         $insert_query = "INSERT INTO users (fname, sname, email, contact, password, pfp, verification_code, is_verified, verification_expiry) 
         VALUES ('$fname', '$sname', '$email', '$contact', '$hashed_password', '$default_pfp', '$hashed_verification_code', 0, '$expiry_time')";
-        
+
         if ($conn->query($insert_query) === TRUE) {
             // Send verification email using PHPMailer
             $mail = new PHPMailer(true);
@@ -166,14 +167,14 @@ if (isset($_POST['forgot_submit'])) {
             $mail->Body = "Click the link to reset your password: <a href='http://app-perfectfit.com/HTML/Forgot.php?token=$token'>Reset Password</a>";
 
             $mail->send();
-            echo "<div class='success-message'>If an account exists with this email, a password reset link will be sent.</div>";
+            $reset_success = "If an account exists with this email, a password reset link will be sent.";
         } catch (Exception $e) {
             // Don't expose error details to user
             echo "<div class='error-message'>An error occurred. Please try again later.</div>";
         }
     } else {
         // Don't reveal if email exists or not
-        echo "<div class='info-message'>If an account exists with this email, a password reset link will be sent.</div>";
+        $reset_success = "If an account exists with this email, a password reset link will be sent.";
     }
 }
 
@@ -207,7 +208,6 @@ if (isset($_GET['token'])) {
     } else {
     }
 } else {
-
 }
 
 // Verification Code Handling
@@ -333,17 +333,36 @@ $conn->close();
     </div>
 
     <div id="forgotPasswordModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeForgotPasswordModal()">&times;</span>
-        <h2>Forgot Password</h2>
-        <form id="forgotPasswordForm" method="post">
-            <input type="email" name="forgot_email" class="input-field" required placeholder="Enter your email">
-            <input type="submit" name="forgot_submit" value="Submit" class="submit-btn">
-        </form>
+        <div class="modal-content">
+            <span class="close" onclick="closeForgotPasswordModal()">&times;</span>
+            <h2>Forgot Password</h2>
+            <form id="forgotPasswordForm" method="post">
+                <input type="email" name="forgot_email" class="input-field" required placeholder="Enter your email">
+                <input type="submit" name="forgot_submit" value="Submit" class="submit-btn">
+            </form>
+        </div>
     </div>
-</div>
+    <div id="resetLinkSentModal" class="modal" style="display: <?php echo !empty($reset_success) ? 'block' : 'none'; ?>;">
+        <div class="modal-content">
+            <span class="close" onclick="closeResetLinkSentModal()">&times;</span>
+            <h2>Reset Link Sent</h2>
+            <p><?php echo $reset_success; ?></p>
+            <button class="submit-btn" onclick="closeResetLinkSentModal()">OK</button>
+        </div>
+    </div>
 
     <script>
+        function closeResetLinkSentModal() {
+            document.getElementById('resetLinkSentModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            var modal = document.getElementById('resetLinkSentModal');
+            if (event.target == modal) {
+                closeResetLinkSentModal();
+            }
+        }
+
         const container = document.getElementById('container');
         const registerBtn = document.getElementById('register1');
         const loginBtn = document.getElementById('login1');
@@ -404,19 +423,19 @@ $conn->close();
         }
 
         function openForgotPasswordModal() {
-        document.getElementById('forgotPasswordModal').style.display = 'block';
-    }
-
-    function closeForgotPasswordModal() {
-        document.getElementById('forgotPasswordModal').style.display = 'none';
-    }
-
-    window.onclick = function(event) {
-        var modal = document.getElementById('forgotPasswordModal');
-        if (event.target == modal) {
-            closeForgotPasswordModal();
+            document.getElementById('forgotPasswordModal').style.display = 'block';
         }
-    }
+
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            var modal = document.getElementById('forgotPasswordModal');
+            if (event.target == modal) {
+                closeForgotPasswordModal();
+            }
+        }
     </script>
 </body>
 
