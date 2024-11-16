@@ -11,16 +11,8 @@ require '../PHPMailer-master/src/Exception.php';
 require '../PHPMailer-master/src/PHPMailer.php';
 require '../PHPMailer-master/src/SMTP.php';
 
-$servername = "localhost";
-$username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
-$dbname = "perfectfit";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'connection.php';
+$conn = Database::getInstance()->getConnection();
 
 function cleanupExpiredCodes($conn) {
     $cleanup_query = "UPDATE users SET verification_code = NULL, verification_expiry = NULL 
