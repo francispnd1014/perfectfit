@@ -24,8 +24,9 @@ body {
     position: relative;
     overflow: hidden;
     margin: 10% auto;
-    width: 768px;
-    max-width: 100%;
+    min-width: 768px;
+    max-width: 768px;
+    /* max-width: 100%; */
     min-height: 480px;
 }
 
