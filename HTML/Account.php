@@ -1,22 +1,13 @@
 <?php
 session_start();
 
-// Check if email is set in session
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
     exit();
 }
 
-$servername = "localhost";
-$username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
-$dbname = "perfectfit";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'connection.php';
+$conn = Database::getInstance()->getConnection();
 
 // Handle cancel order request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order'])) {
