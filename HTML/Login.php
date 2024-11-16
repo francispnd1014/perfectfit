@@ -163,7 +163,7 @@ if (isset($_POST['forgot_submit'])) {
             // Content
             $mail->isHTML(true);
             $mail->Subject = 'Password Reset Request';
-            $mail->Body = "Click the link to reset your password: <a href='http://localhost/HTML/Forgot.php?token=$token'>Reset Password</a>";
+            $mail->Body = "Click the link to reset your password: <a href='http://app-perfectfit.com/HTML/Forgot.php?token=$token'>Reset Password</a>";
 
             $mail->send();
             echo "<div class='success-message'>If an account exists with this email, a password reset link will be sent.</div>";
