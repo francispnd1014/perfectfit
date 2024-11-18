@@ -48,14 +48,15 @@ try {
 }
 
 function getCenterColor($imagePath) {
-    // Read EXIF data for actual image dimensions
+    // Attempt to get image dimensions from EXIF if available
     $exifData = exif_read_data($imagePath);
-    if (!$exifData || !isset($exifData['COMPUTED']['Width']) || !isset($exifData['COMPUTED']['Height'])) {
-        die("Cannot read image dimensions. Ensure the image has valid EXIF data.");
+    if ($exifData && isset($exifData['COMPUTED']['Width']) && isset($exifData['COMPUTED']['Height'])) {
+        $width = $exifData['COMPUTED']['Width'];
+        $height = $exifData['COMPUTED']['Height'];
+    } else {
+        // If EXIF is unavailable, use getimagesize()
+        list($width, $height) = getimagesize($imagePath);
     }
-
-    $width = $exifData['COMPUTED']['Width'];
-    $height = $exifData['COMPUTED']['Height'];
 
     // Define the central region (20% of the image center)
     $centerX = round($width * 0.4);
@@ -63,6 +64,7 @@ function getCenterColor($imagePath) {
     $sampleWidth = round($width * 0.2);
     $sampleHeight = round($height * 0.2);
 
+    // Read image data
     $data = file_get_contents($imagePath);
 
     // Pixel extraction logic
@@ -92,7 +94,7 @@ function getCenterColor($imagePath) {
 
     // Avoid division by zero
     if ($totalPixels === 0) {
-        return [255, 255, 255]; // Default to white
+        return [255, 255, 255]; // Default to white if no pixels are found
     }
 
     return [
