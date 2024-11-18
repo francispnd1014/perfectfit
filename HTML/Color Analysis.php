@@ -59,6 +59,11 @@ require '../intervention-image-master/src/Intervention/Image/AbstractDecoder.php
 require '../intervention-image-master/src/Intervention/Image/AbstractDriver.php';
 require '../intervention-image-master/src/Intervention/Image/Commands/AbstractCommand.php';
 require '../intervention-image-master/src/Intervention/Image/Commands/ResizeCommand.php';
+require '../intervention-image-master/src/Intervention/Image/File.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Decoder.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Driver.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Commands/ResizeCommand.php';
+require '../intervention-image-master/src/Intervention/Image/Exceptions/NotSupportedException.php';
 
 use Intervention\Image\ImageManager;
 
