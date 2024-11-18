@@ -47,28 +47,23 @@ try {
     exit();
 }
 
-// Average RGB calculation using GD library
+// Average RGB calculation
 function getFaceColor($imagePath) {
-    $image = imagecreatefromjpeg($imagePath);
-    $width = imagesx($image);
-    $height = imagesy($image);
+    $data = file_get_contents($imagePath);
+    $len = strlen($data);
     $totalR = $totalG = $totalB = $totalPixels = 0;
 
-    for ($x = 0; $x < $width; $x++) {
-        for ($y = 0; $y < $height; $y++) {
-            $rgb = imagecolorat($image, $x, $y);
-            $r = ($rgb >> 16) & 0xFF;
-            $g = ($rgb >> 8) & 0xFF;
-            $b = $rgb & 0xFF;
+    // Approximate sampling for JPEG pixel analysis
+    for ($i = 0; $i < $len; $i += 4) {
+        $r = ord($data[$i]);
+        $g = ord($data[$i + 1]);
+        $b = ord($data[$i + 2]);
 
-            $totalR += $r;
-            $totalG += $g;
-            $totalB += $b;
-            $totalPixels++;
-        }
+        $totalR += $r;
+        $totalG += $g;
+        $totalB += $b;
+        $totalPixels++;
     }
-
-    imagedestroy($image);
 
     return [
         round($totalR / $totalPixels),
