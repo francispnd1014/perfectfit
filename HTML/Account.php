@@ -147,7 +147,7 @@ if ($rent_result->num_rows > 0) {
                                 <a href="../HTML/Account.php" class="sub-menu-link">
                                     <p>Profile</p>
                                 </a>
-                                <a href="Logout.php" class="sub-menu-link">
+                                <a href="logout.php" class="sub-menu-link">
                                     <p>Log Out</p>
                                 </a>
                             </div>
@@ -170,7 +170,6 @@ if ($rent_result->num_rows > 0) {
                         <nav>
                             <ul>
                                 <li><a href="#favorite" onclick="showSection('favorite')">Favorite</a></li>
-                                <!-- <li><a href="#renting" onclick="showSection('renting')">Renting</a></li> -->
                                 <li><a href="#pending" onclick="showSection('pending')">Pending</a></li>
                                 <li><a href="#payment" onclick="showSection('payment')">Payment</a></li>
                                 <li><a href="#service" onclick="showSection('service')">Service</a></li>
@@ -455,7 +454,6 @@ if ($rent_result->num_rows > 0) {
                                             ?>
                                         </div>
                                         <div class="overlay returned">
-                                        Returned
                                             <div class="service-type">
                                                 Service: <?php echo htmlspecialchars(ucfirst($rented_gown['service'])); ?>
                                             </div>
