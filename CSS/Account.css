@@ -470,6 +470,11 @@ a {
   text-decoration: none;
 }
 
+.image {
+  width: 248px;
+  height: 365px;
+}
+
 .image-container {
   position: relative;
   display: inline-block;
