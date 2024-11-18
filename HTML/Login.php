@@ -257,7 +257,6 @@ $conn->close();
 </head>
 
 <body>
-    <div class="banner">
         <div class="container" id="container">
             <div class="form-container sign-up">
                 <form id="register" class="input-group2" action="" method="post" autocomplete="off" onsubmit="return validatePassword()">
@@ -315,7 +314,6 @@ $conn->close();
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Verification Modal -->
     <div id="verificationModal" class="modal" style="display: <?php echo isset($_POST['verify_code']) || !empty($register_success) ? 'block' : 'none'; ?>;">
