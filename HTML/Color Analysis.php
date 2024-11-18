@@ -53,7 +53,6 @@ try {
 }
 
 // Manually include the Intervention Image library files
-require '../intervention-image-master/src/Intervention/Image/ImageServiceProvider.php';
 require '../intervention-image-master/src/Intervention/Image/ImageManager.php';
 require '../intervention-image-master/src/Intervention/Image/AbstractDriver.php';
 require '../intervention-image-master/src/Intervention/Image/Gd/Driver.php';
