@@ -48,30 +48,44 @@ try {
 }
 
 // Average RGB calculation
-// Average RGB calculation with improved accuracy
-function getFaceColor($imagePath) {
+function getCenterColor($imagePath) {
     $data = file_get_contents($imagePath);
     $len = strlen($data);
+    $width = 800; // Assume average width (replace with known dimensions if available)
+    $height = 600; // Assume average height
+    $centerX = $width * 0.4;
+    $centerY = $height * 0.4;
+    $sampleWidth = $width * 0.2;
+    $sampleHeight = $height * 0.2;
+
     $totalR = $totalG = $totalB = $totalPixels = 0;
 
-    // Iterate over binary data to sample pixels
-    for ($i = 0; $i < $len; $i += 4) {
-        $r = ord($data[$i]);
-        $g = ord($data[$i + 1]);
-        $b = ord($data[$i + 2]);
+    for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
+        for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
+            // Approximate pixel index
+            $pixelIndex = ($y * $width + $x) * 3;
 
-        // Skip pure white or black pixels
-        if (($r > 240 && $g > 240 && $b > 240) || ($r < 10 && $g < 10 && $b < 10)) {
-            continue;
+            if ($pixelIndex + 2 >= $len) {
+                break;
+            }
+
+            $r = ord($data[$pixelIndex]);
+            $g = ord($data[$pixelIndex + 1]);
+            $b = ord($data[$pixelIndex + 2]);
+
+            // Skip white/black pixels
+            if (($r > 240 && $g > 240 && $b > 240) || ($r < 10 && $g < 10 && $b < 10)) {
+                continue;
+            }
+
+            $totalR += $r;
+            $totalG += $g;
+            $totalB += $b;
+            $totalPixels++;
         }
-
-        $totalR += $r;
-        $totalG += $g;
-        $totalB += $b;
-        $totalPixels++;
     }
 
-    // Prevent division by zero if all pixels are skipped
+    // Prevent division by zero
     if ($totalPixels === 0) {
         return [255, 255, 255]; // Default to white
     }
@@ -113,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
     }
 
     if (move_uploaded_file($_FILES['skin_image']['tmp_name'], $imagePath)) {
-        list($avgR, $avgG, $avgB) = getFaceColor($imagePath);
+        list($avgR, $avgG, $avgB) = getCenterColor($imagePath);
         $skinTone = analyzeSkinTone($avgR, $avgG, $avgB);
 
         $_SESSION['result'] = [
