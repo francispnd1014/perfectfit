@@ -11,16 +11,16 @@ $username = "root";
 $password = "g8gbV0noL$3&fA6x-GAMER";
 $dbname = "perfectfit";
 
-// Create connection
+
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
+
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Assuming $email is defined and sanitized
-$email = $_SESSION['email']; // or however you get the email
+
+$email = $_SESSION['email']; 
 
 $query = "SELECT fname, sname, pfp FROM users WHERE email='$email'";
 $result = $conn->query($query);
@@ -37,7 +37,7 @@ if ($result->num_rows > 0) {
     exit();
 }
 
-// Query to get distinct themes
+
 $theme_query = "SELECT DISTINCT theme FROM product";
 $theme_result = $conn->query($theme_query);
 
@@ -48,7 +48,7 @@ if ($theme_result->num_rows > 0) {
     }
 }
 
-// Query to get distinct colors
+
 $color_query = "SELECT DISTINCT color FROM product";
 $color_result = $conn->query($color_query);
 
@@ -59,7 +59,7 @@ if ($color_result->num_rows > 0) {
     }
 }
 
-// Query to get distinct sizes
+
 $size_query = "SELECT GROUP_CONCAT(DISTINCT size SEPARATOR ',') AS sizes FROM product";
 $size_result = $conn->query($size_query);
 
@@ -69,7 +69,7 @@ if ($size_result->num_rows > 0) {
     $sizes = array_unique(explode(',', $row['sizes']));
 }
 
-// Handle filter form submission
+
 $selectedThemes = [];
 $selectedColors = [];
 $selectedSizes = [];
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_GET['selectedTags'])) {
 
 $select_query = "SELECT * FROM product WHERE 1=1";
 
-// Apply filters based on selected themes
+
 if (!empty($selectedThemes)) {
     $themeConditions = [];
     foreach ($selectedThemes as $themeData) {
@@ -106,7 +106,7 @@ if (!empty($selectedThemes)) {
     }
 }
 
-// Apply filters based on selected colors
+
 if (!empty($selectedColors)) {
     $colorConditions = [];
     foreach ($selectedColors as $colorData) {
@@ -124,7 +124,7 @@ if (!empty($selectedColors)) {
     }
 }
 
-// Apply filters based on selected sizes
+
 if (!empty($selectedSizes)) {
     $sizeConditions = [];
     foreach ($selectedSizes as $sizeData) {
@@ -151,12 +151,12 @@ function log_user_interaction($conn, $email, $gown_id, $interaction_type)
 }
 $gown_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Log view interaction
+
 if ($gown_id) {
     log_user_interaction($conn, $email, $gown_id, 'view');
 }
 
-// Log search interaction
+
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search = mysqli_real_escape_string($conn, $_GET['search']);
     $select_query .= " AND (name LIKE '%$search%' OR size LIKE '%$search%' OR color LIKE '%$search%' OR theme LIKE '%$search%' OR analysis LIKE '%$search%' OR tone LIKE '%$search%')";
@@ -279,7 +279,7 @@ $select = mysqli_query($conn, $select_query);
                             <h4 class="category-filter">Sizes</h4>
                             <form class="filter-form" method="GET" id="filterForm">
                                 <?php
-                                // Define the desired sizes
+                                
                                 $desired_sizes = ['Extra small', 'Small', 'Medium', 'Large'];
 
                                 foreach ($desired_sizes as $size) {
@@ -309,7 +309,7 @@ $select = mysqli_query($conn, $select_query);
                         </div>
                         <div class="product-display">
                             <?php while ($row = mysqli_fetch_assoc($select)) {
-                                // Fetch rental details if the gown is rented
+                                
                                 $rental_details = null;
                                 if ($row['status'] == 1) {
                                     $rental_query = "SELECT date_rented, duedate FROM rent WHERE gownname_rented = ?";
@@ -342,9 +342,9 @@ $select = mysqli_query($conn, $select_query);
                                             <?php
                                             $images = @unserialize($row['img']);
                                             if ($images === false && $row['img'] !== 'b:0;') {
-                                                $images = [$row['img']]; // Treat as a single image if unserializing fails
+                                                $images = [$row['img']]; 
                                             }
-                                            // Display only the first image
+                                            
                                             if (!empty($images)) {
                                                 $image = $images[0];
                                                 echo '<img src="uploaded_img/' . htmlspecialchars($image) . '" alt="" style="width: 200px; height: 250px;">';
@@ -371,22 +371,22 @@ $select = mysqli_query($conn, $select_query);
     </div>
 
     <script>
-        // Clear filters on page load if filters exist in URL
+        
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('selectedTags')) {
-                // Clear query params on page load to reset filters
+                
                 const url = new URL(window.location.href);
-                url.searchParams.delete('selectedTags'); // Remove theTags param
-                history.replaceState(null, '', url); // Replace the URL without reloading the page
-                document.getElementById('selectedTags').value = ''; // Reset selectedTags input
-                selectedTags = []; // Reset selectedTags array
+                url.searchParams.delete('selectedTags'); 
+                history.replaceState(null, '', url); 
+                document.getElementById('selectedTags').value = ''; 
+                selectedTags = []; 
             }
 
             document.querySelectorAll('.filter-box').forEach(function(box) {
-                box.setAttribute('data-state', 'blank'); // Reset state to blank
-                box.textContent = ''; // Clear any text (like check or X)
-                box.style.color = ''; // Reset color
+                box.setAttribute('data-state', 'blank'); 
+                box.textContent = ''; 
+                box.style.color = ''; 
             });
         };
 
@@ -510,16 +510,16 @@ $select = mysqli_query($conn, $select_query);
             const params = new URLSearchParams();
             params.append('search', searchInput);
 
-            // Redirect with the search term only, removing any filters
+            
             window.location.href = '?' + params.toString();
         }
 
         function clearFilters() {
-            // Reload the page to clear filters
+            
             window.location.reload();
         }
 
-        // Close search bar, filter form box, and dropdown menu when clicking outside
+        
         document.addEventListener('click', function(event) {
             const searchBar = document.getElementById('search-barA');
             const dropdown = document.getElementById('myDropdown');

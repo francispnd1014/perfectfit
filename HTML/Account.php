@@ -9,7 +9,7 @@ if (!isset($_SESSION['email'])) {
 require_once 'connection.php';
 $conn = Database::getInstance()->getConnection();
 
-// Handle cancel order request
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order'])) {
     $id = $conn->real_escape_string($_POST['id']);
     $email = $_SESSION['email'];
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order'])) {
     }
     exit();
 }
-// Handle delete declined gown request
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_declined'])) {
     $id = $conn->real_escape_string($_POST['id']);
     $email = $_SESSION['email'];
@@ -37,10 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_declined'])) {
     }
     exit();
 }
-// Get email from session
+
 $email = $_SESSION['email'];
 
-// Fetch user data based on email
+
 $query = "SELECT fname, sname, pfp FROM users WHERE email='$email'";
 $result = $conn->query($query);
 
@@ -56,7 +56,7 @@ if ($result->num_rows > 0) {
     exit();
 }
 
-// Fetch favorite gowns for the user
+
 $fav_query = "SELECT gown_name FROM favorite WHERE email='$email'";
 $fav_result = $conn->query($fav_query);
 
@@ -65,7 +65,7 @@ if ($fav_result->num_rows > 0) {
     while ($fav_row = $fav_result->fetch_assoc()) {
         $gown_names = explode(',', $fav_row['gown_name']);
         foreach ($gown_names as $gown_name) {
-            $gown_name = trim($gown_name); // Remove any extra spaces
+            $gown_name = trim($gown_name); 
             $product_query = "SELECT id, img FROM product WHERE name='$gown_name'";
             $product_result = $conn->query($product_query);
             if ($product_result->num_rows > 0) {
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     echo json_encode(['success' => (bool)$result]);
     exit;
 }
-// Fetch rented gowns for the user
+
 $rent_query = "SELECT id, gownname_rented, request, date_rented, duedate, returned_date, total, address, reason, service FROM rent WHERE email='$email'";
 $rent_result = $conn->query($rent_query);
 
@@ -96,20 +96,20 @@ if ($rent_result->num_rows > 0) {
     while ($rent_row = $rent_result->fetch_assoc()) {
         $rented_gown_names = explode(',', $rent_row['gownname_rented']);
         foreach ($rented_gown_names as $rented_gown_name) {
-            $rented_gown_name = trim($rented_gown_name); // Remove any extra spaces
+            $rented_gown_name = trim($rented_gown_name); 
             $product_query = "SELECT id, img, price FROM product WHERE name='$rented_gown_name'";
             $product_result = $conn->query($product_query);
             if ($product_result->num_rows > 0) {
                 while ($product_row = $product_result->fetch_assoc()) {
-                    $product_row['request'] = $rent_row['request']; // Add request status to the product row
-                    $product_row['service'] = $rent_row['service']; // Add service type to the product row
-                    $product_row['date_rented'] = $rent_row['date_rented']; // Add date rented to the product row
-                    $product_row['duedate'] = $rent_row['duedate']; // Add due date to the product row
-                    $product_row['returned_date'] = $rent_row['returned_date']; // Add due date to the product row
-                    $product_row['total'] = $rent_row['total']; // Add due date to the product row
-                    $product_row['address'] = $rent_row['address']; // Add due date to the product row
-                    $product_row['reason'] = $rent_row['reason']; // Add due date to the product row
-                    $product_row['rent_id'] = $rent_row['id']; // Add rent id to the product row
+                    $product_row['request'] = $rent_row['request']; 
+                    $product_row['service'] = $rent_row['service']; 
+                    $product_row['date_rented'] = $rent_row['date_rented']; 
+                    $product_row['duedate'] = $rent_row['duedate']; 
+                    $product_row['returned_date'] = $rent_row['returned_date']; 
+                    $product_row['total'] = $rent_row['total']; 
+                    $product_row['address'] = $rent_row['address']; 
+                    $product_row['reason'] = $rent_row['reason']; 
+                    $product_row['rent_id'] = $rent_row['id']; 
                     $rented_gown_images[] = $product_row;
                 }
             }
@@ -147,7 +147,7 @@ if ($rent_result->num_rows > 0) {
                                 <a href="../HTML/Account.php" class="sub-menu-link">
                                     <p>Profile</p>
                                 </a>
-                                <a href="logout.php" class="sub-menu-link">
+                                <a href="Logout.php" class="sub-menu-link">
                                     <p>Log Out</p>
                                 </a>
                             </div>
@@ -170,6 +170,7 @@ if ($rent_result->num_rows > 0) {
                         <nav>
                             <ul>
                                 <li><a href="#favorite" onclick="showSection('favorite')">Favorite</a></li>
+                                <!-- <li><a href="#renting" onclick="showSection('renting')">Renting</a></li> -->
                                 <li><a href="#pending" onclick="showSection('pending')">Pending</a></li>
                                 <li><a href="#payment" onclick="showSection('payment')">Payment</a></li>
                                 <li><a href="#service" onclick="showSection('service')">Service</a></li>
@@ -186,9 +187,9 @@ if ($rent_result->num_rows > 0) {
                                             <?php
                                             $images = @unserialize($gown['img']);
                                             if ($images === false && $gown['img'] !== 'b:0;') {
-                                                $images = [$gown['img']]; // Treat as a single image if unserializing fails
+                                                $images = [$gown['img']]; 
                                             }
-                                            // Display only the first image
+                                            
                                             if (!empty($images)) {
                                                 $image = $images[0];
                                                 echo '<img class="grid-item" src="uploaded_img/' . htmlspecialchars($image) . '" alt="Gown Image" />';
@@ -354,9 +355,9 @@ if ($rent_result->num_rows > 0) {
                                             <?php
                                             $images = @unserialize($rented_gown['img']);
                                             if ($images === false && $rented_gown['img'] !== 'b:0;') {
-                                                $images = [$rented_gown['img']]; // Treat as a single image if unserializing fails
+                                                $images = [$rented_gown['img']]; 
                                             }
-                                            // Display only the first image
+                                            
                                             if (!empty($images)) {
                                                 $image = $images[0];
                                                 echo '<img class="grid-item" src="uploaded_img/' . htmlspecialchars($image) . '" alt="Rented Gown Image" />';
@@ -507,7 +508,7 @@ if ($rent_result->num_rows > 0) {
     </div>
 
     <script>
-        // Modal handling utility class
+        
         class ModalHandler {
             constructor() {
                 this.selectedOrderId = null;
@@ -522,7 +523,7 @@ if ($rent_result->num_rows > 0) {
             }
 
             attachEventListeners() {
-                // Cancel order buttons
+                
                 document.querySelectorAll('.cancel-order-btn').forEach(button => {
                     button.addEventListener('click', () => {
                         this.selectedOrderId = button.getAttribute('data-id');
@@ -530,7 +531,7 @@ if ($rent_result->num_rows > 0) {
                     });
                 });
 
-                // Payment buttons
+                
                 document.querySelectorAll('.pay-order-btn').forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -539,12 +540,12 @@ if ($rent_result->num_rows > 0) {
                     });
                 });
 
-                // Confirmation actions
+                
                 document.getElementById('confirmYes').addEventListener('click', () => this.handleCancelOrder());
                 document.getElementById('confirmPaymentYes').addEventListener('click', () => this.handlePaymentConfirmation());
                 document.getElementById('successOk').addEventListener('click', () => this.handleSuccess());
 
-                // Close buttons and outside clicks
+                
                 document.querySelectorAll('.close, .payment-close, #confirmNo, #confirmPaymentNo').forEach(element => {
                     element.addEventListener('click', () => this.hideAllModals());
                 });
@@ -619,7 +620,7 @@ if ($rent_result->num_rows > 0) {
             }
         }
 
-        // Initialize when DOM is loaded
+        
         document.addEventListener('DOMContentLoaded', () => {
             const modalHandler = new ModalHandler();
         });
@@ -669,7 +670,7 @@ if ($rent_result->num_rows > 0) {
                     });
             }
 
-            // Close modals when clicking outside
+            
             window.onclick = function(event) {
                 if (event.target == modal) {
                     modal.style.display = 'none';
@@ -681,9 +682,9 @@ if ($rent_result->num_rows > 0) {
             }
         }
 
-        // Add this event listener to ensure scripts load after DOM
+        
         document.addEventListener('DOMContentLoaded', () => {
-            // Attach event listeners to all settle payment buttons
+            
             document.querySelectorAll('.pay-order-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -714,7 +715,7 @@ if ($rent_result->num_rows > 0) {
             const sections = document.querySelectorAll('.photos');
             const listItems = document.querySelectorAll('nav ul li a');
 
-            // Hide all sections and remove bold-underline class
+            
             sections.forEach(section => {
                 section.classList.add('hidden');
                 section.classList.remove('active');
@@ -726,19 +727,19 @@ if ($rent_result->num_rows > 0) {
                 item.classList.remove('bold');
             });
 
-            // Show the selected section with animation
+            
             const selectedSection = document.getElementById(sectionId);
             selectedSection.classList.remove('hidden');
             selectedSection.classList.remove('fade-out');
             selectedSection.classList.add('fade-in');
             selectedSection.classList.add('active');
 
-            // Add bold to the clicked item
+            
             const clickedItem = document.querySelector(`nav ul li a[href="#${sectionId}"]`);
             clickedItem.classList.add('bold');
         }
 
-        // Activate the favorite section by default
+        
         document.addEventListener('DOMContentLoaded', () => {
             showSection('favorite');
             document.querySelector('nav ul li a[href="#favorite"]').classList.add('bold');
@@ -771,7 +772,7 @@ if ($rent_result->num_rows > 0) {
                         .then(data => {
                             if (data.status === 'success') {
                                 alert(data.message);
-                                location.reload(); // Reload the page to reflect changes
+                                location.reload(); 
                             } else {
                                 alert(data.message);
                             }

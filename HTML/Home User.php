@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Check if email is set in session
+
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
     exit();
@@ -12,7 +12,7 @@ $username = "root";
 $password = "g8gbV0noL$3&fA6x-GAMER";
 $dbname = "perfectfit";
 
-// Create connection using try-catch
+
 try {
     $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -20,7 +20,7 @@ try {
         throw new Exception("Connection failed: " . $conn->connect_error);
     }
 
-    // Get email from session and prepare statement
+    
     $email = $_SESSION['email'];
     $stmt = $conn->prepare("SELECT fname, sname, pfp FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
@@ -43,7 +43,7 @@ try {
     $gowns_result = $conn->query($gowns_query);
 
 } catch (Exception $e) {
-    // Log error and redirect to error page
+    
     error_log($e->getMessage());
     header("Location: error.php");
     exit();
@@ -93,11 +93,11 @@ try {
             <div class="slideshow-container">
                 <div class="titleheader overlay">
                     <div style="display: flex; position: relative; justify-content: center; align-items: center; width: 100%;">
-                        <img class="arrowright" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-1.svg" alt="Arrow 1">
+                        <img class="arrowright" src="https:
                         <div style="position: relative; display: flex; justify-content: center; align-items: center;">
                             <span class="perfectfit">PERFECT FIT</span>
                         </div>
-                        <img class="arrowleft" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-2.svg" alt="Arrow 2">
+                        <img class="arrowleft" src="https:
                     </div>
                     <h1 class="gown">RICH SABINIAN</h1>
                     <p class="intro">PerfectFit: Gown Rental believes every occasion deserves a showstopping outfit. Explore our stunning collection of gowns and find the perfect style to express your unique personality and make your special event unforgettable.</p>
@@ -131,7 +131,7 @@ try {
             <?php
             if ($gowns_result->num_rows > 0) {
                 while ($gown = $gowns_result->fetch_assoc()) {
-                    // Fetch rental details if the gown is rented
+                    
                     $rental_details = null;
                     if ($gown['status'] == 1) {
                         $rental_query = "SELECT date_rented, duedate FROM rent WHERE gownname_rented = ?";
@@ -164,7 +164,7 @@ try {
                                 <?php
                                 $images = @unserialize($gown['img']);
                                 if ($images === false && $gown['img'] !== 'b:0;') {
-                                    $images = [$gown['img']]; // Single image fallback
+                                    $images = [$gown['img']]; 
                                 }
                                 if (!empty($images)) {
                                     $image = $images[0];
@@ -201,12 +201,12 @@ try {
             </div>
             <div class="col">
                 <h3>LOCATION</h3>
-                <p><a href="https://www.google.com/maps/place/Rich+Sabinian+dress+shop/@15.1455783,120.5756874,17z/data=!3m1!4b1!4m6!3m5!1s0x3396f3376d4710c9:0xe98a262fadbfa4f9!8m2!3d15.1455783!4d120.5782623!16s%2Fg%2F11g0wgfhjj?entry=ttu&g_ep=EgoyMDI0MDkzMC4wIKXMDSoASAFQAw%3D%3D"><i class="fa-solid fa-location-dot"></i> #18 Purok 1, Angeles, Pampanga</a></p>
+                <p><a href="https:
             </div>
             <div class="col">
                 <h3>CONTACT US</h3>
                 <p><i class="fa-solid fa-phone-volume"></i> 0916 460 5072</p>
-                <p><a href="https://www.facebook.com/ritche.sabinian"><i class="fa-brands fa-facebook"></i> facebook.com/ritche.sabinian</a></p>
+                <p><a href="https:
                 <p><i class="fa-solid fa-envelope"></i> richsabinianpampang@gmail.com</p>
             </div>
         </div>
@@ -246,7 +246,7 @@ try {
             dots[slideIndex - 1].className += " active-dot";
         }
 
-        // Auto advance slides
+        
         setInterval(() => {
             plusSlides(1);
         }, 5000);

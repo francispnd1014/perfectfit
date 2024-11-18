@@ -9,7 +9,7 @@ if (!isset($_SESSION['email'])) {
 require_once 'connection.php';
 $conn = Database::getInstance()->getConnection();
 
-// Fetch users' emails and full names from the database
+
 $query = "SELECT email, CONCAT(fname, ' ', sname) AS fullname FROM users";
 $result = $conn->query($query);
 
@@ -20,7 +20,7 @@ if ($result->num_rows > 0) {
     }
 }
 
-// Fetch data from the database
+
 $usersResult = $conn->query("SELECT COUNT(*) AS count FROM users");
 $productsResult = $conn->query("SELECT COUNT(*) AS count FROM product");
 $rentedResult = $conn->query("SELECT COUNT(*) AS count FROM rent");
@@ -29,7 +29,7 @@ $usersCount = $usersResult->fetch_assoc()['count'];
 $productsCount = $productsResult->fetch_assoc()['count'];
 $rentedCount = $rentedResult->fetch_assoc()['count'];
 
-// Fetch theme data from the products table
+
 $themesResult = $conn->query("SELECT theme, COUNT(*) AS count FROM product GROUP BY theme");
 $themes = [];
 $themeCounts = [];
@@ -38,26 +38,26 @@ while ($row = $themesResult->fetch_assoc()) {
     $themeCounts[] = $row['count'];
 }
 
-// Fetch user who rented the most
+
 $topUserResult = $conn->query("SELECT email, COUNT(*) AS count FROM rent GROUP BY email ORDER BY count DESC LIMIT 1");
 $topUser = $topUserResult->fetch_assoc();
 
-// Fetch top 3 most popular gowns based on tally
+
 $topGownsResult = $conn->query("SELECT name, img, tally FROM product ORDER BY tally DESC LIMIT 3");
 $topGowns = [];
 while ($row = $topGownsResult->fetch_assoc()) {
     $topGowns[] = $row;
 }
 
-// Fetch pending request gowns
+
 $pendingRequestsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE request = 'pending'");
 $pendingRequestsCount = $pendingRequestsResult->fetch_assoc()['count'];
 
-// Fetch reserved gowns
+
 $reservedGownsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE request = 'reserved'");
 $reservedGownsCount = $reservedGownsResult->fetch_assoc()['count'];
 
-// Fetch total revenue
+
 $revenueResult = $conn->query("SELECT SUM(total) AS revenue FROM rent WHERE request = 'accepted'");
 $totalRevenue = $revenueResult->fetch_assoc()['revenue'];
 
@@ -67,7 +67,7 @@ $reservedGownsCount = $reservedGownsResult->fetch_assoc()['count'];
 $activeRentalsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE request = 'received'");
 $activeRentalsCount = $activeRentalsResult->fetch_assoc()['count'];
 
-// Fetch monthly revenue for line chart
+
 $monthlyRevenueResult = $conn->query("SELECT DATE_FORMAT(date_rented, '%Y-%m') AS month, SUM(total) AS revenue FROM rent WHERE request = 'accepted' GROUP BY month ORDER BY month");
 $months = [];
 $monthlyRevenues = [];
@@ -263,7 +263,7 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
             dropdown.classList.toggle("show");
         }
 
-        // Close the dropdown if the user clicks outside of it
+        
         window.onclick = function(event) {
             var dropdowns = document.getElementsByClassName("dropdown");
             for (var i = 0; i < dropdowns.length; i++) {
@@ -273,7 +273,7 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
                 }
             }
         }
-        // Revenue Chart
+        
         const revenueChart = new Chart(document.getElementById('revenueChart'), {
             type: 'line',
             data: {
@@ -297,7 +297,7 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
             }
         });
 
-        // Category Chart
+        
         const categoryChart = new Chart(document.getElementById('categoryChart'), {
             type: 'doughnut',
             data: {

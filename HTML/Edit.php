@@ -41,7 +41,7 @@ if (isset($_POST['edit_product'])) {
     } else {
         $existing_images = @unserialize($product['img']);
         if ($existing_images === false && $product['img'] !== 'b:0;') {
-            $existing_images = [$product['img']]; // Treat as a single image if unserializing fails
+            $existing_images = [$product['img']]; 
         }
 
         $new_image_paths = [];
@@ -69,33 +69,33 @@ if (isset($_POST['edit_product'])) {
         }
     }
 }
-// Ensure product_id is set before use
+
 $product_id = isset($_POST['product_id']) ? $_POST['product_id'] : (isset($product['id']) ? $product['id'] : null);
 
 if (isset($_POST['delete_image']) && $product_id) {
     $image_to_delete = $_POST['delete_image'];
 
-    // Get the product's images from the database specific to this product ID
+    
     $query = "SELECT img FROM product WHERE id = $product_id";
     $result = mysqli_query($conn, $query);
     $product = mysqli_fetch_assoc($result);
 
     $images = @unserialize($product['img']);
     if ($images === false && $product['img'] !== 'b:0;') {
-        $images = [$product['img']]; // Handle as a single image if unserializing fails
+        $images = [$product['img']]; 
     }
 
-    // Remove the specified image from the array for this product only
+    
     if (($key = array_search($image_to_delete, $images)) !== false) {
         unset($images[$key]);
 
-        // Serialize the updated array of images
+        
         $updated_images = serialize(array_values($images));
 
-        // Update the product's images in the database
+        
         $update_query = "UPDATE product SET img='$updated_images' WHERE id=$product_id";
         if (mysqli_query($conn, $update_query)) {
-            // Optionally, delete the physical file from the server
+            
             $image_path = 'uploaded_img/' . $image_to_delete;
             if (file_exists($image_path)) {
                 unlink($image_path);
@@ -256,9 +256,9 @@ $conn->close();
                             <?php
                             $images = @unserialize($product['img']);
                             if ($images === false && $product['img'] !== 'b:0;') {
-                                $images = [$product['img']]; // Treat as a single image if unserializing fails
+                                $images = [$product['img']]; 
                             }
-                            // Display existing images
+                            
                             if (!empty($images)) {
                                 foreach ($images as $image) {
                                     echo '<div class="image-container" style="display: inline-block; position: relative; margin: 5px;">';
@@ -316,7 +316,7 @@ $conn->close();
             window.location.href = 'CRUD.php';
         }
 
-        // Close the modal when the user clicks anywhere outside of it
+        
         window.onclick = function(event) {
             var modal = document.getElementById("successModal");
             if (event.target == modal) {

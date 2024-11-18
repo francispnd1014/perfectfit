@@ -62,7 +62,7 @@ if (isset($_GET['delete'])) {
     exit();
 }
 
-// Query to get distinct colors from the database
+
 $color_query = "SELECT DISTINCT color FROM product";
 $color_result = mysqli_query($conn, $color_query);
 
@@ -177,9 +177,9 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                             <?php
                             $images = @unserialize($row['img']);
                             if ($images === false && $row['img'] !== 'b:0;') {
-                                $images = [$row['img']]; // Treat as a single image if unserializing fails
+                                $images = [$row['img']]; 
                             }
-                            // Display only the first image
+                            
                             if (!empty($images)) {
                                 $image = $images[0];
                                 echo '<img src="uploaded_img/' . $image . '" alt="">';
@@ -277,26 +277,26 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                 xml.send();
             });
         }
-        // Get the modal
+        
         var modal = document.getElementById("myModal");
 
-        // Get the button that opens the modal
+        
         var btn = document.getElementById("btnAddProduct");
 
-        // Get the cancel button that closes the modal
+        
         var cancelBtn = document.getElementById("btnCancel");
 
-        // When the user clicks the button, open the modal 
+        
         btn.onclick = function() {
             modal.style.display = "block";
         }
 
-        // When the user clicks on the cancel button, close the modal
+        
         cancelBtn.onclick = function() {
             modal.style.display = "none";
         }
 
-        // When the user clicks anywhere outside of the modal, close it
+        
         window.onclick = function(event) {
             if (event.target == modal) {
                 modal.style.display = "none";

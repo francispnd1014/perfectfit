@@ -9,8 +9,8 @@ if (!isset($_SESSION['email'])) {
 require_once 'connection.php';
 $conn = Database::getInstance()->getConnection();
 
-// Assuming $email is defined and sanitized
-$email = $_SESSION['email']; // or however you get the email
+
+$email = $_SESSION['email']; 
 
 $query = "SELECT fname, sname, pfp FROM users WHERE email='$email'";
 $result = $conn->query($query);
@@ -27,28 +27,28 @@ if ($result->num_rows > 0) {
     exit();
 }
 
-// Get the gown ID from the query parameter
+
 $gown_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Fetch gown details from the database
+
 $query = "SELECT * FROM product WHERE id = $gown_id";
 $result = $conn->query($query);
 
 if ($result->num_rows > 0) {
     $gown = $result->fetch_assoc();
-    $gown_image = $gown['img']; // Assuming 'img' is the column name for the gown image URL
-    $gown_rent = $gown['price']; // Assuming 'price' is the column name for the gown price
-    $gown_name = $gown['name']; // Assuming 'name' is the column name for the gown name
-    $gown_status = $gown['status']; // Assuming 'status' is the column name for the gown status
+    $gown_image = $gown['img']; 
+    $gown_rent = $gown['price']; 
+    $gown_name = $gown['name']; 
+    $gown_status = $gown['status']; 
 } else {
     echo "Gown not found.";
     exit();
 }
 
-// Add this function after the database connection setup
+
 function getNextAvailableDate($conn, $gown_name)
 {
-    // Check if the gown is reserved
+    
     $query = "SELECT duedate, reservation FROM rent 
               WHERE gownname_rented = ? AND request = 'accepted'
               ORDER BY duedate DESC LIMIT 1";
@@ -61,25 +61,25 @@ function getNextAvailableDate($conn, $gown_name)
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         if ($row['reservation']) {
-            // If the gown is reserved, set the next available date to current date + 4 days
+            
             $date = new DateTime();
             $date->modify('+4 days');
             return $date->format('Y-m-d');
         } else {
-            // If the gown is not reserved, proceed with the usual logic
+            
             $duedate = new DateTime($row['duedate']);
-            $duedate->modify('+1 week'); // Add 1 week grace period
+            $duedate->modify('+1 week'); 
             return $duedate->format('Y-m-d');
         }
     }
 
-    // If no existing rentals or reservations, return current date + 4 days
+    
     $date = new DateTime();
     $date->modify('+4 days');
     return $date->format('Y-m-d');
 }
 
-// Check if the gown is already favorited
+
 $isFavorited = false;
 $stmt = $conn->prepare("SELECT gown_name FROM favorite WHERE email = ?");
 $stmt->bind_param("s", $email);
@@ -97,7 +97,7 @@ if ($stmt->num_rows > 0) {
 $stmt->close();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['favorite'])) {
-    // Check if the email already exists in the favorite table
+    
     $stmt = $conn->prepare("SELECT gown_name FROM favorite WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -106,10 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['favorite'])) {
     $stmt->fetch();
 
     if ($stmt->num_rows > 0) {
-        // Email exists, check if the gown is already favorited
+        
         $gown_names_array = explode(', ', $existing_gown_names);
         if (in_array($gown_name, $gown_names_array)) {
-            // Gown is already favorited, unfavorite it
+            
             $gown_names_array = array_diff($gown_names_array, [$gown_name]);
             $updated_gown_names = implode(', ', $gown_names_array);
             $stmt->close();
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['favorite'])) {
             $stmt->execute();
             $isFavorited = false;
         } else {
-            // Gown is not favorited, add it to favorites
+            
             $gown_names_array[] = $gown_name;
             $updated_gown_names = implode(', ', $gown_names_array);
             $stmt->close();
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['favorite'])) {
             $isFavorited = true;
         }
     } else {
-        // Email does not exist, add new entry
+        
         $stmt->close();
         $stmt = $conn->prepare("INSERT INTO favorite (email, gown_name) VALUES (?, ?)");
         $stmt->bind_param("ss", $email, $gown_name);
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['favorite'])) {
         $isFavorited = true;
     }
     $stmt->close();
-    // Reload the page to reflect the changes
+    
     header("Location: " . $_SERVER['REQUEST_URI']);
     exit();
 }
@@ -147,25 +147,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rent_gown'])) {
     $cellnumber = $_POST['cellnumber'];
     $deliveryAddress = $_POST['address'];
     $service = $_POST['service'];
-    $total = floatval(str_replace(',', '', $_POST['total_price'])); // Remove commas and convert to float
+    $total = floatval(str_replace(',', '', $_POST['total_price'])); 
     $fullName = $_SESSION['fullname'];
     $email = $_SESSION['email'];
     $gownName = $gown_name;
 
-    // Validate and sanitize cellnumber
+    
     $cellnumber = filter_var($cellnumber, FILTER_SANITIZE_NUMBER_INT);
-    if (strlen($cellnumber) > 15) { // Adjust the length as per your database schema
+    if (strlen($cellnumber) > 15) { 
         echo "Cell number is too long.";
         exit();
     }
 
-    // Insert rental details into the rent table with request status 'pending'
+    
     $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, cellnumber, duedate, address, service, total, request, reservation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0)");
     $stmt->bind_param("sssssssd", $email, $gownName, $deliveryDate, $cellnumber, $returnDate, $deliveryAddress, $service, $total);
     $stmt->execute();
     $stmt->close();
 
-    // Show the success modal
+    
     echo "<script>
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('rentModal').style.display = 'none';
@@ -180,18 +180,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_gown'])) {
     $deliveryAddress = $_POST['address'];
     $cellnumber = $_POST['cellnumber'];
     $service = $_POST['service'];
-    $total = floatval(str_replace(',', '', $_POST['total_price'])); // Remove commas and convert to float
+    $total = floatval(str_replace(',', '', $_POST['total_price'])); 
     $fullName = $_SESSION['fullname'];
     $email = $_SESSION['email'];
     $gownName = $gown_name;
 
-    // Insert reservation details
+    
     $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, duedate, cellnumber, address, service, total, request, reservation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'accepted', TRUE)");
     $stmt->bind_param("sssssssd", $email, $gownName, $deliveryDate, $returnDate, $cellnumber, $deliveryAddress, $service, $total);
     $stmt->execute();
     $stmt->close();
 
-    // Show success modal
+    
     echo "<script>
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('reservationModal').style.display = 'none';
@@ -211,13 +211,13 @@ if ($result->num_rows > 0) {
     $gown_image = $gown['img'];
     $gown_rent = $gown['price'];
     $gown_name = $gown['name'];
-    $gown_tally = $gown['tally']; // Fetch the tally value
+    $gown_tally = $gown['tally']; 
 } else {
     echo "Gown not found.";
     exit();
 }
 
-// Log user interaction
+
 function log_user_interaction($conn, $email, $gown_id, $interaction_type)
 {
     $stmt = $conn->prepare("INSERT INTO user_interactions (email, gown_id, interaction_type) VALUES (?, ?, ?)");
@@ -227,12 +227,12 @@ function log_user_interaction($conn, $email, $gown_id, $interaction_type)
 }
 $gown_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Log view interaction
+
 if ($gown_id) {
     log_user_interaction($conn, $email, $gown_id, 'view');
 }
 
-// Log search interaction
+
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search = mysqli_real_escape_string($conn, $_GET['search']);
     $select_query .= " AND (name LIKE '%$search%' OR size LIKE '%$search%' OR color LIKE '%$search%' OR theme LIKE '%$search%' OR analysis LIKE '%$search%' OR tone LIKE '%$search%')";
@@ -240,7 +240,7 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
 }
 
 
-// Fetch 5 products from the database
+
 $product_query = "SELECT * FROM product LIMIT 6";
 $product_result = $conn->query($product_query);
 $products = [];
@@ -251,7 +251,7 @@ if ($product_result->num_rows > 0) {
 }
 
 
-// Fetch rental status for the gown
+
 $rental_status = null;
 $stmt = $conn->prepare("SELECT request FROM rent WHERE gownname_rented = ? AND email = ?");
 $stmt->bind_param("ss", $gown_name, $email);
@@ -269,7 +269,7 @@ $stmt->close();
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="../IMAGES/FAV.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https:
     <link rel="stylesheet" href="font/css/all.min.css">
     <link rel="stylesheet" href="../CSS/Preview.css">
     <title><?php echo $gown_name; ?></title>
@@ -319,9 +319,9 @@ $stmt->close();
                             <?php
                             $images = @unserialize($gown_image);
                             if ($images === false && $gown_image !== 'b:0;') {
-                                $images = [$gown_image]; // Treat as a single image if unserializing fails
+                                $images = [$gown_image]; 
                             }
-                            // Display images
+                            
                             if (!empty($images)) {
                                 foreach ($images as $index => $image) {
                                     $activeClass = $index === 0 ? 'active' : '';
@@ -345,7 +345,7 @@ $stmt->close();
                             <?php if ($gown_status == 1): ?>
                                 <p class="rent_status">Rented</p>
                                 <?php
-                                // Fetch rental details if the gown is rented
+                                
                                 $rental_query = "SELECT date_rented, duedate FROM rent WHERE gownname_rented = ? AND request = 'accepted'";
                                 $stmt = $conn->prepare($rental_query);
                                 $stmt->bind_param("s", $gown_name);
@@ -417,10 +417,10 @@ $stmt->close();
         </div>
 
 <?php
-// Fetch recommended products based on user interactions
+
 function get_recommended_products($conn, $email)
 {
-    // Fetch the most interacted gowns by the user excluding rented gowns
+    
     $user_interactions_query = "
         SELECT gown_id, COUNT(*) as interaction_count
         FROM user_interactions
@@ -439,7 +439,7 @@ function get_recommended_products($conn, $email)
     }
     $stmt->close();
 
-    // Fetch the most interacted gowns by other users who have similar interactions excluding rented gowns
+    
     $other_users_interactions_query = "
         SELECT gown_id, COUNT(*) as interaction_count
         FROM user_interactions
@@ -458,11 +458,11 @@ function get_recommended_products($conn, $email)
     }
     $stmt->close();
 
-    // Merge and shuffle the gown IDs to introduce randomness
+    
     $all_recommended_gowns = array_unique(array_merge($user_interacted_gowns, $recommended_gowns));
     shuffle($all_recommended_gowns);
 
-    // If fewer than 5 recommendations are found, fetch some popular gowns as a fallback
+    
     if (count($all_recommended_gowns) < 5) {
         $popular_gowns_query = "
             SELECT id
@@ -477,11 +477,11 @@ function get_recommended_products($conn, $email)
         }
     }
 
-    // Limit the number of recommendations to 5
+    
     return array_slice($all_recommended_gowns, 0, 5);
 }
 
-// Fetch recommended products
+
 $recommended_gown_ids = get_recommended_products($conn, $email);
 $recommended_products = [];
 if (!empty($recommended_gown_ids)) {
@@ -493,7 +493,7 @@ if (!empty($recommended_gown_ids)) {
     }
 }
 
-// Display recommended products
+
 if (!empty($recommended_products)) {
     echo '<h2 class="reco">Recommended Products</h2>';
     echo '<div class="product-list">';
@@ -657,7 +657,7 @@ if (!empty($recommended_products)) {
                         <?php
                         if (isset($deliveryDate)) {
                             $date = new DateTime($deliveryDate);
-                            echo $date->format('F j, Y'); // Format as "Month day, Year"
+                            echo $date->format('F j, Y'); 
                         }
                         ?>
                     </span>
@@ -668,7 +668,7 @@ if (!empty($recommended_products)) {
                         <?php
                         if (isset($returnDate)) {
                             $date = new DateTime($returnDate);
-                            echo $date->format('F j, Y'); // Format as "Month day, Year"
+                            echo $date->format('F j, Y'); 
                         }
                         ?>
                     </span>
@@ -698,13 +698,13 @@ if (!empty($recommended_products)) {
                 reserveBtn.onclick = function() {
                     reservationModal.style.display = "block";
 
-                    // Set minimum date to 2 months from today
+                    
                     var today = new Date();
                     today.setMonth(today.getMonth() + 2);
                     today.setDate(today.getDate() + 1);
                     var minDate = today.toISOString().split('T')[0];
                     document.getElementById('reservation_date').min = minDate;
-                    document.getElementById('reservation_return').min = minDate; // Set min date for return date
+                    document.getElementById('reservation_return').min = minDate; 
                 }
 
                 spanCloseReservation.onclick = function() {
@@ -727,7 +727,7 @@ if (!empty($recommended_products)) {
                     document.getElementById("reservation-total-price-hidden").value = totalPrice.toFixed(2);
                 }
 
-                // Add validation for reservation dates
+                
                 document.getElementById('reservation_date').addEventListener('change', function() {
                     var selectedDate = new Date(this.value);
                     var minDate = new Date();
@@ -739,10 +739,10 @@ if (!empty($recommended_products)) {
                     }
                 });
 
-                // Call updateReservationFee on page load to set the initial values
+                
                 updateReservationFee();
 
-                // Add event listener to update the service fee when the service option changes
+                
                 document.getElementById("reservation_service").addEventListener('change', updateReservationFee);
             });
             document.addEventListener('DOMContentLoaded', function() {
@@ -774,10 +774,10 @@ if (!empty($recommended_products)) {
                 serviceFeeElement.textContent = serviceFee === 0 ? '' : '₱' + serviceFee.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
                 var totalPrice = (gownRent + serviceFee + deposit).toFixed(2);
                 totalPriceElement.textContent = '₱' + totalPrice.replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                totalPriceHidden.value = totalPrice; // Store the value without commas
+                totalPriceHidden.value = totalPrice; 
             }
 
-            // Call updateServiceFee on page load to set the initial values
+            
             document.addEventListener('DOMContentLoaded', updateServiceFee);
 
             function toggleDropdown() {
@@ -785,35 +785,35 @@ if (!empty($recommended_products)) {
                 dropdown.classList.toggle("show");
             }
 
-            // Get the modals
+            
             var rentModal = document.getElementById("rentModal");
             var successModal = document.getElementById("successModal");
 
-            // Get the button that opens the rent modal
+            
             var rentBtn = document.querySelector(".rent-btn");
 
-            // Get the <span> elements that close the modals
+            
             var spanCloseRent = document.getElementsByClassName("close")[0];
             var spanCloseSuccess = document.getElementsByClassName("close")[1];
 
-            // When the user clicks the button, open the rent modal 
+            
             if (rentBtn) {
                 rentBtn.onclick = function() {
                     rentModal.style.display = "block";
                 }
             }
 
-            // When the user clicks on <span> (x), close the rent modal
+            
             spanCloseRent.onclick = function() {
                 rentModal.style.display = "none";
             }
 
-            // When the user clicks on <span> (x), close the success modal
+            
             spanCloseSuccess.onclick = function() {
                 successModal.style.display = "none";
             }
 
-            // When the user clicks anywhere outside of the modals, close them
+            
             window.onclick = function(event) {
                 if (event.target == rentModal) {
                     rentModal.style.display = "none";
@@ -823,12 +823,12 @@ if (!empty($recommended_products)) {
                 }
             }
 
-            // Handle go back button click
+            
             document.getElementById("goBackButton").onclick = function() {
                 window.location.href = 'Shop User.php';
             }
 
-            // Image slider functionality
+            
             let slideIndex = 0;
             showSlides(slideIndex);
 
@@ -860,7 +860,7 @@ if (!empty($recommended_products)) {
                 });
             }
 
-            // Close search bar, filter form box, and dropdown menu when clicking outside
+            
             document.addEventListener('click', function(event) {
                 const searchBar = document.getElementById('search-barA');
                 const dropdown = document.getElementById('myDropdown');

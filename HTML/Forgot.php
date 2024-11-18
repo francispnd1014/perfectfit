@@ -5,21 +5,21 @@ $conn = Database::getInstance()->getConnection();
 if (isset($_GET['token'])) {
     $provided_token = $_GET['token'];
 
-    // Query to find user with matching hashed token and valid expiry time
+    
     $sql = "SELECT email, reset_token, token_expiry FROM users WHERE reset_token IS NOT NULL";
     $result = $conn->query($sql);
     $user_found = false;
 
     while($row = $result->fetch_assoc()) {
-        // Check if the token is expired
+        
         if (new DateTime() > new DateTime($row['token_expiry'])) {
-            // Token is expired, clear it from the database
+            
             $sql = "UPDATE users SET reset_token=NULL, token_expiry=NULL WHERE email='" . $row['email'] . "'";
             $conn->query($sql);
             continue;
         }
 
-        // Verify the token against stored hash
+        
         if (password_verify($provided_token, $row['reset_token'])) {
             $email = $row['email'];
             $user_found = true;
@@ -35,11 +35,11 @@ if (isset($_GET['token'])) {
             if ($newPassword === $confirmPassword) {
                 $hashed_password = password_hash($newPassword, PASSWORD_DEFAULT);
 
-                // Update the password in the database
+                
                 $sql = "UPDATE users SET password='$hashed_password', reset_token=NULL, token_expiry=NULL WHERE email='$email'";
                 $conn->query($sql);
 
-                // Display the modal
+                
                 echo '
                 <style>
                     .modal {
@@ -96,7 +96,7 @@ if (isset($_GET['token'])) {
                 echo "Passwords do not match.";
             }
         } else {
-            // Display the password reset form
+            
             echo '
             <style>
                 .reset-container {

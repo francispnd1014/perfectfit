@@ -21,11 +21,11 @@
         </div>
         <div class="titleheader">
             <div style="display: flex; position: relative;">
-                <img class="arrowright" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-1.svg" alt="Arrow 1">
+                <img class="arrowright" src="https:
                 <div style="position: relative; display: flex; justify-content: center;">
                     <span class="perfectfit">PERFECT FIT</span>
                 </div>
-                <img class="arrowleft" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-2.svg" alt="Arrow 2">
+                <img class="arrowleft" src="https:
             </div>
             <h1 class="gown">RICH SABINIAN</h1>
             <p class="intro">PerfectFit: Gown Rental believes every occasion deserves a showstopping outfit. Explore our stunning collection of gowns and find the perfect style to express your unique personality and make your special event unforgettable.</p>
@@ -42,12 +42,12 @@
             </div>
             <div class="col">
                 <h3>LOCATION</h3>
-                <p><a href="https://www.google.com/maps/place/Rich+Sabinian+dress+shop/@15.1455783,120.5756874,17z/data=!3m1!4b1!4m6!3m5!1s0x3396f3376d4710c9:0xe98a262fadbfa4f9!8m2!3d15.1455783!4d120.5782623!16s%2Fg%2F11g0wgfhjj?entry=ttu&g_ep=EgoyMDI0MDkzMC4wIKXMDSoASAFQAw%3D%3D"><i class="fa-solid fa-location-dot"></i> #18 Purok 1, Angeles, Pampanga</a></p>
+                <p><a href="https:
             </div>
             <div class="col">
                 <h3>CONTACT US</h3>
                 <p><i class="fa-solid fa-phone-volume"></i> 0916 460 5072</p>
-                <p><a href="https://www.facebook.com/ritche.sabinian"><i class="fa-brands fa-facebook"></i> facebook.com/ritche.sabinian</a></p>
+                <p><a href="https:
                 <p><i class="fa-solid fa-envelope"></i> richsabinianpampang@gmail.com</p>
             </div>
         </div>

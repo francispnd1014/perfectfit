@@ -25,13 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt->bind_param("ssi", $status, $reason, $id);
                 $stmt->execute();
             } elseif ($status === 'payment') {
-                // Accept the selected order
+                
                 $accept_sql = "UPDATE rent SET request = ? WHERE id = ?";
                 $accept_stmt = $conn->prepare($accept_sql);
                 $accept_stmt->bind_param("si", $status, $id);
                 $accept_stmt->execute();
 
-                // Update product status to rented (1) and increment tally
+                
                 $sql2 = "UPDATE product p
                          JOIN rent r ON p.name = r.gownname_rented
                          SET p.status = 1, p.tally = p.tally + 1
@@ -40,13 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt2->bind_param("i", $id);
                 $stmt2->execute();
             } elseif ($status === 'returned') {
-                // Update rent status
+                
                 $sql = "UPDATE rent SET request = ?, returned_date = NOW() WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("si", $status, $id);
                 $stmt->execute();
 
-                // Update product status back to available (0)
+                
                 $sql2 = "UPDATE product p
                          JOIN rent r ON p.name = r.gownname_rented
                          SET p.status = 0
@@ -55,13 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt2->bind_param("i", $id);
                 $stmt2->execute();
             } elseif ($status === 'received') {
-                // Update rent status to received and set reservation to 0
+                
                 $sql = "UPDATE rent SET request = ?, reservation = 0 WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("si", $status, $id);
                 $stmt->execute();
 
-                // Update product status to rented (1) and increment tally
+                
                 $sql2 = "UPDATE product p
                          JOIN rent r ON p.name = r.gownname_rented
                          SET p.status = 1, p.tally = p.tally + 1
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt2->bind_param("i", $id);
                 $stmt2->execute();
             } else {
-                // Default update for other statuses
+                
                 $sql = "UPDATE rent SET request = ? WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("si", $status, $id);
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'update_product') {
         $conn->begin_transaction();
         try {
-            // Assuming update_product functionality is defined here
+            
             $conn->commit();
             echo json_encode(['success' => true]);
         } catch (Exception $e) {
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Fetch rent requests for all tabs
+
 $sql_all = "SELECT r.*, u.fname, u.sname, p.name as gown_name, p.img 
             FROM rent r 
             JOIN users u ON r.email = u.email 
@@ -108,7 +108,7 @@ $sql_all = "SELECT r.*, u.fname, u.sname, p.name as gown_name, p.img
             ORDER BY r.id DESC";
 $result_all = $conn->query($sql_all);
 
-// Fetch rent requests for the pending tab, grouped by gown name and ordered by rent date descending
+
 $sql_pending = "SELECT r.*, u.fname, u.sname, p.name as gown_name, p.img 
                 FROM rent r 
                 JOIN users u ON r.email = u.email 
@@ -117,7 +117,7 @@ $sql_pending = "SELECT r.*, u.fname, u.sname, p.name as gown_name, p.img
                 ORDER BY p.name, r.date_rented DESC";
 $result_pending = $conn->query($sql_pending);
 
-// Fetch reservation requests
+
 $sql_reservations = "SELECT r.*, u.fname, u.sname, p.name as gown_name, p.img 
                      FROM rent r 
                      JOIN users u ON r.email = u.email 
@@ -184,7 +184,7 @@ $result_reservations = $conn->query($sql_reservations);
                     while ($row = $result_pending->fetch_assoc()):
                         if ($currentGownName !== $row['gown_name']) {
                             if ($currentGownName !== null) {
-                                echo '</div>'; // Close previous gown group
+                                echo '</div>'; 
                             }
                             $currentGownName = $row['gown_name'];
                             echo '<div class="gown-group">';
@@ -247,7 +247,7 @@ $result_reservations = $conn->query($sql_reservations);
                     <?php
                     endwhile;
                     if ($currentGownName !== null) {
-                        echo '</div>'; // Close last gown group
+                        echo '</div>'; 
                     }
                     ?>
                 </div>
@@ -320,7 +320,7 @@ $result_reservations = $conn->query($sql_reservations);
                     if ($row['request'] == 'payment'):
                         if ($currentGownName !== $row['gown_name']) {
                             if ($currentGownName !== null) {
-                                echo '</div>'; // Close previous gown group
+                                echo '</div>'; 
                             }
                             $currentGownName = $row['gown_name'];
                             echo '<div class="gown-group">';
@@ -384,7 +384,7 @@ $result_reservations = $conn->query($sql_reservations);
                     endif;
                 endwhile;
                 if ($currentGownName !== null) {
-                    echo '</div>'; // Close last gown group
+                    echo '</div>'; 
                 }
                 ?>
             </div>
@@ -394,10 +394,10 @@ $result_reservations = $conn->query($sql_reservations);
                 $currentGownName = null;
                 $result_all->data_seek(0);
                 while ($row = $result_all->fetch_assoc()):
-                    if ($row['request'] == 'accepted' && !$row['reservation']): // Exclude reservation gowns
+                    if ($row['request'] == 'accepted' && !$row['reservation']): 
                         if ($currentGownName !== $row['gown_name']) {
                             if ($currentGownName !== null) {
-                                echo '</div>'; // Close previous gown group
+                                echo '</div>'; 
                             }
                             $currentGownName = $row['gown_name'];
                             echo '<div class="gown-group">';
@@ -458,7 +458,7 @@ $result_reservations = $conn->query($sql_reservations);
                     endif;
                 endwhile;
                 if ($currentGownName !== null) {
-                    echo '</div>'; // Close last gown group
+                    echo '</div>'; 
                 }
                 ?>
             </div>
@@ -616,18 +616,18 @@ $result_reservations = $conn->query($sql_reservations);
 
                     tabs.forEach(tab => {
                         tab.addEventListener('click', () => {
-                            // Remove active class from all tabs
+                            
                             tabs.forEach(t => t.classList.remove('active'));
 
-                            // Add active class to clicked tab
+                            
                             tab.classList.add('active');
 
-                            // Hide all tab content
+                            
                             document.querySelectorAll('.tab-content').forEach(content => {
                                 content.classList.remove('active');
                             });
 
-                            // Show selected tab content
+                            
                             const targetTab = tab.getAttribute('data-tab');
                             document.getElementById(targetTab + '-tab').classList.add('active');
                         });
@@ -652,7 +652,7 @@ $result_reservations = $conn->query($sql_reservations);
 
                 function updateStatus(id, status) {
                     if (status === 'declined') {
-                        // Show decline reason modal
+                        
                         const declineModal = document.getElementById('declineModal');
                         const reasonSelect = document.getElementById('declineReason');
                         const otherReason = document.getElementById('otherReason');
@@ -703,7 +703,7 @@ $result_reservations = $conn->query($sql_reservations);
                             }
                         };
                     } else {
-                        // Original confirmation modal for other statuses
+                        
                         const modal = document.getElementById('confirmModal');
                         const message = document.getElementById('confirmMessage');
                         const yesBtn = document.getElementById('confirmYes');
