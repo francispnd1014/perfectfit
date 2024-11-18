@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
 
 // Clear the result on page load
@@ -18,7 +15,7 @@ if (!isset($_SESSION['email'])) {
 // Database connection parameters
 $servername = "localhost";
 $username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
+$password = "";
 $dbname = "perfectfit";
 
 // Create connection using try-catch
@@ -52,26 +49,17 @@ try {
     exit();
 }
 
-// Manually include the Intervention Image library files
-require '../intervention-image-master/src/Intervention/Image/ImageManager.php';
-require '../intervention-image-master/src/Intervention/Image/AbstractDriver.php';
-require '../intervention-image-master/src/Intervention/Image/AbstractDecoder.php';
-require '../intervention-image-master/src/Intervention/Image/AbstractEncoder.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Driver.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Decoder.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Encoder.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Image.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Commands/ResizeCommand.php';
-
-use Intervention\Image\ImageManager;
-
 // Function to get the average color of the central part of the image
 function getFaceColor($imagePath) {
-    $manager = new ImageManager(['driver' => 'gd']);
-    $image = $manager->make($imagePath);
+    $imageData = file_get_contents($imagePath);
+    $image = imagecreatefromstring($imageData);
 
-    $width = $image->width();
-    $height = $image->height();
+    if (!$image) {
+        die("Failed to load image.");
+    }
+
+    $width = imagesx($image);
+    $height = imagesy($image);
 
     // Define a central area for approximation (e.g., 20% of the image center)
     $centerX = $width * 0.4;
@@ -84,13 +72,19 @@ function getFaceColor($imagePath) {
 
     for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
         for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
-            $color = $image->pickColor($x, $y, 'array');
-            $totalR += $color[0];
-            $totalG += $color[1];
-            $totalB += $color[2];
+            $rgb = imagecolorat($image, $x, $y);
+            $r = ($rgb >> 16) & 0xFF;
+            $g = ($rgb >> 8) & 0xFF;
+            $b = $rgb & 0xFF;
+
+            $totalR += $r;
+            $totalG += $g;
+            $totalB += $b;
             $totalPixels++;
         }
     }
+
+    imagedestroy($image);
 
     return [
         round($totalR / $totalPixels),
@@ -141,6 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
