@@ -455,6 +455,7 @@ if ($rent_result->num_rows > 0) {
                                             ?>
                                         </div>
                                         <div class="overlay returned">
+                                        Returned
                                             <div class="service-type">
                                                 Service: <?php echo htmlspecialchars(ucfirst($rented_gown['service'])); ?>
                                             </div>
