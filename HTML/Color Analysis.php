@@ -87,7 +87,7 @@ function getFaceColor($imagePath) {
 function analyzeSkinTone($avgR, $avgG, $avgB) {
     $brightness = ($avgR + $avgG + $avgB) / 3;
 
-    if ($brightness > 220) {
+    if ($brightness > 140) {
         return "Very Fair";
     } elseif ($brightness > 200) {
         return "Fair";
