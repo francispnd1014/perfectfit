@@ -462,6 +462,21 @@ function get_recommended_products($conn, $email)
     $all_recommended_gowns = array_unique(array_merge($user_interacted_gowns, $recommended_gowns));
     shuffle($all_recommended_gowns);
 
+    // If no recommendations are found, fetch some popular gowns as a fallback
+    if (empty($all_recommended_gowns)) {
+        $popular_gowns_query = "
+            SELECT id
+            FROM product
+            WHERE status != 1
+            ORDER BY RAND()
+            LIMIT 5
+        ";
+        $result = $conn->query($popular_gowns_query);
+        while ($row = $result->fetch_assoc()) {
+            $all_recommended_gowns[] = $row['id'];
+        }
+    }
+
     // Limit the number of recommendations to 5
     return array_slice($all_recommended_gowns, 0, 5);
 }
