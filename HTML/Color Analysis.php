@@ -60,7 +60,7 @@ require '../intervention-image-master/src/Intervention/Image/AbstractEncoder.php
 require '../intervention-image-master/src/Intervention/Image/Gd/Driver.php';
 require '../intervention-image-master/src/Intervention/Image/Gd/Decoder.php';
 require '../intervention-image-master/src/Intervention/Image/Gd/Encoder.php';
-require '../intervention-image-master/src/Intervention/Image/Image.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Image.php';
 require '../intervention-image-master/src/Intervention/Image/Gd/Commands/ResizeCommand.php';
 
 use Intervention\Image\ImageManager;
