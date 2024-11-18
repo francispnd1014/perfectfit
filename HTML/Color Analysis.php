@@ -69,6 +69,8 @@ function getCenterColor($imagePath) {
 
     // Pixel extraction logic
     $totalR = $totalG = $totalB = $totalPixels = 0;
+    $weightedR = $weightedG = $weightedB = 0;
+    $skinPixelCount = 0;
     $pixelStride = 3; // RGB components per pixel
 
     for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
@@ -84,23 +86,47 @@ function getCenterColor($imagePath) {
             $g = ord($data[$pixelIndex + 1]);
             $b = ord($data[$pixelIndex + 2]);
 
+            // Skip pixels that are too light (likely background)
+            if ($r > 200 && $g > 200 && $b > 200) {
+                continue; // White or near-white pixels
+            }
+
             // Accumulate RGB values
             $totalR += $r;
             $totalG += $g;
             $totalB += $b;
             $totalPixels++;
+
+            // Apply weighted approach for skin-like tones
+            // Example: Skin tones tend to have a higher red component
+            if ($r > 120 && $g > 90 && $b < 100) {
+                $weightedR += $r;
+                $weightedG += $g;
+                $weightedB += $b;
+                $skinPixelCount++;
+            }
         }
     }
 
-    // Avoid division by zero
+    // If no valid pixels found, fall back to default white
     if ($totalPixels === 0) {
         return [255, 255, 255]; // Default to white if no pixels are found
     }
 
+    // Calculate weighted average if skin-like pixels exist
+    if ($skinPixelCount > 0) {
+        return [
+            round($weightedR / $skinPixelCount),
+            round($weightedG / $skinPixelCount),
+            round($weightedB / $skinPixelCount)
+        ];
+    }
+
+    // Fallback to simple average if no skin-like pixels were found
     return [
         round($totalR / $totalPixels),
         round($totalG / $totalPixels),
-        round($totalB / $totalPixels),
+        round($totalB / $totalPixels)
     ];
 }
 
@@ -108,22 +134,24 @@ function getCenterColor($imagePath) {
 function analyzeSkinTone($avgR, $avgG, $avgB) {
     $brightness = ($avgR + $avgG + $avgB) / 3;
 
-    if ($brightness > 220) {
+    // Adjusting for more accurate thresholds
+    if ($brightness > 215 && $avgR > 205 && $avgG > 190) {
         return "Very Fair";
-    } elseif ($brightness > 200) {
+    } elseif ($brightness > 200 && $avgR > 180 && $avgG > 170) {
         return "Fair";
-    } elseif ($brightness > 170) {
+    } elseif ($avgR > 160 && $avgG > 140 && $avgB > 120) {
         return "Medium Fair";
-    } elseif ($brightness > 140) {
+    } elseif ($avgR > 140 && $avgG > 120 && $avgB > 100) {
         return "Medium";
-    } elseif ($brightness > 110) {
+    } elseif ($avgR > 130 && $avgG > 110 && $avgB > 90) {
         return "Olive";
-    } elseif ($brightness > 80) {
+    } elseif ($avgR > 120 && $avgG > 100 && $avgB > 80) {
         return "Naturally Brown";
     } else {
         return "Dark Brown";
     }
 }
+
 
 // Handle uploaded image
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
