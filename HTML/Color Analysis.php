@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
 
 // Clear the result on page load
@@ -9,68 +6,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     unset($_SESSION['result']);
 }
 
-// Check if email is set in session
-if (!isset($_SESSION['email'])) {
-    header("Location: Login.php");
-    exit();
-}
-
-// Database connection parameters
-$servername = "localhost";
-$username = "root";
-$password = "g8gbV0noL$3&fA6x-GAMER";
-$dbname = "perfectfit";
-
-// Create connection using try-catch
-try {
-    $conn = new mysqli($servername, $username, $password, $dbname);
-    if ($conn->connect_error) {
-        throw new Exception("Connection failed: " . $conn->connect_error);
-    }
-
-    // Get email from session and prepare statement
-    $email = $_SESSION['email'];
-    $stmt = $conn->prepare("SELECT fname, sname, pfp FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $fullname = $row['fname'] . ' ' . $row['sname'];
-        $profile_picture = $row['pfp'];
-        $fname = $row['fname'];
-        $_SESSION['fullname'] = $fullname;
-        $_SESSION['profile_picture'] = $profile_picture;
-    } else {
-        header("Location: Login.php");
-        exit();
-    }
-} catch (Exception $e) {
-    error_log($e->getMessage());
-    header("Location: error.php");
-    exit();
-}
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
+// Handle the uploaded image
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
-    // Debug information
-    error_log("Upload attempt started");
-    error_log("Upload error code: " . $_FILES['skin_image']['error']);
-    error_log("Temp file: " . $_FILES['skin_image']['tmp_name']);
-
     $uploadDir = 'uploaded_img';
     $imagePath = $uploadDir . '/' . basename($_FILES['skin_image']['name']);
 
     // Check directory permissions
     if (!file_exists($uploadDir)) {
-        if (!mkdir($uploadDir, 0777, true)) {
-            error_log("Failed to create directory");
-            die("Failed to create upload directory");
-        }
-        chmod($uploadDir, 0777);
+        mkdir($uploadDir, 0777, true);
     }
 
     // Validate file
@@ -80,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
     }
 
     if (!move_uploaded_file($_FILES['skin_image']['tmp_name'], $imagePath)) {
-        error_log("Failed to move file. Error: " . error_get_last()['message']);
         die("Failed to upload image. Please check file permissions.");
     }
 
@@ -148,134 +90,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
         }
     }
 
-    // Handle the uploaded image
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
-        $imagePath = 'uploaded_img/' . basename($_FILES['skin_image']['name']);
+    list($avgR, $avgG, $avgB) = getFaceColor($imagePath);
+    $skinTone = analyzeSkinTone($avgR, $avgG, $avgB);
 
-        if (!is_dir('uploaded_img')) {
-            mkdir('uploaded_img', 0777, true);
-        }
-
-        if (move_uploaded_file($_FILES['skin_image']['tmp_name'], $imagePath)) {
-            list($avgR, $avgG, $avgB) = getFaceColor($imagePath);
-            $skinTone = analyzeSkinTone($avgR, $avgG, $avgB);
-
-            $_SESSION['result'] = [
-                'avgR' => $avgR,
-                'avgG' => $avgG,
-                'avgB' => $avgB,
-                'skinTone' => $skinTone,
-                'imagePath' => $imagePath
-            ];
-        } else {
-            error_log("Failed to move uploaded file.");
-            echo "Failed to upload image.";
-        }
-    }
+    $_SESSION['result'] = [
+        'avgR' => $avgR,
+        'avgG' => $avgG,
+        'avgB' => $avgB,
+        'skinTone' => $skinTone,
+        'imagePath' => $imagePath
+    ];
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Home</title>
-    <link rel="icon" type="image/x-icon" href="../IMAGES/FAV.png">
-    <link rel="stylesheet" href="../CSS/Analysis.css">
-    <script src="https://kit.fontawesome.com/a4c2475e10.js"></script>
+    <title>Skin Tone Analysis</title>
 </head>
-
 <body>
-    <div class="banner">
-        <div class="navbar">
-            <a href="../HTML/Home User.php"><img src="../IMAGES/RICH SABINIANS.png" class="logo">
-                <ul>
-                    <li><a href="../HTML/Home User.php">Home</a></li>
-                    <li><a href="../HTML/Shop User.php">Shop</a></li>
-                    <li class="dropdown">
-                        <a href="#" class="dropbtn" onclick="toggleDropdown()"> <?php echo htmlspecialchars($fname); ?></a>
-                        <div id="myDropdown" class="dropdown-content">
-                            <div class="sub-menu">
-                                <div class="user-info">
-                                    <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="Profile Picture" width="50" height="50">
-                                    <h3><?php echo htmlspecialchars($fullname); ?></h3>
-                                </div>
-                                <a href="../HTML/Account.php" class="sub-menu-link">
-                                    <p>Profile</p>
-                                </a>
-                                <a href="Logout.php" class="sub-menu-link">
-                                    <p>Log Out</p>
-                                </a>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-        </div>
-        <div class="analysis-container">
-            <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-                <h1>Upload an Image for Skin Tone Analysis</h1>
-                <input class="upload" type="file" name="skin_image" accept="image/*" required id="imageInput">
-                <button type="submit">Upload and Analyze</button>
-            </form>
-            <br>
-            <br>
-            <br>
-            <br>
-            <?php
-            if (isset($_SESSION['result'])) {
-                $result = $_SESSION['result'];
-                echo "<h1>Skin Tone Analysis Result</h1>";
-                echo "<p>Average Color (RGB): R={$result['avgR']}, G={$result['avgG']}, B={$result['avgB']}</p>";
-                echo "<p>Detected Skin Tone: <strong>{$result['skinTone']}</strong></p>";
-                echo "<p><img src='{$result['imagePath']}' width='200' alt='Uploaded Image'></p>";
-            } else {
-                echo "No Results to Display.";
-            }
-            ?>
-        </div>
-    </div>
-    <script>
-        function validateForm() {
-            const fileInput = document.getElementById('imageInput');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                alert('Please select a file');
-                return false;
-            }
-
-            if (!file.type.match('image.*')) {
-                alert('Please select an image file');
-                return false;
-            }
-
-            if (file.size > 10485760) { // 10MB
-                alert('File is too large. Please select a file under 10MB');
-                return false;
-            }
-
-            return true;
-        }
-
-        function toggleDropdown() {
-            var dropdown = document.getElementById("myDropdown");
-            dropdown.classList.toggle("show");
-        }
-
-        window.onclick = function(event) {
-            if (!event.target.matches('.dropbtn')) {
-                var dropdowns = document.getElementsByClassName("dropdown-content");
-                for (var i = 0; i < dropdowns.length; i++) {
-                    var openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
-                    }
-                }
-            }
-        }
-    </script>
+    <h1>Upload an Image for Skin Tone Analysis</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="skin_image" accept="image/*" required>
+        <button type="submit">Upload and Analyze</button>
+    </form>
+    <br>
+    <?php
+    if (isset($_SESSION['result'])) {
+        $result = $_SESSION['result'];
+        echo "<h1>Skin Tone Analysis Result</h1>";
+        echo "<p>Average Color (RGB): R={$result['avgR']}, G={$result['avgG']}, B={$result['avgB']}</p>";
+        echo "<p>Detected Skin Tone: <strong>{$result['skinTone']}</strong></p>";
+        echo "<p><img src='{$result['imagePath']}' width='200' alt='Uploaded Image'></p>";
+    } else {
+        echo "No Results to Display.";
+    }
+    ?>
 </body>
-
 </html>
