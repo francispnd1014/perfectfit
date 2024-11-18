@@ -305,7 +305,7 @@ $select = mysqli_query($conn, $select_query);
                                 <option value="rent-price-asc">Low to High</option>
                                 <option value="rent-price-desc">High to Low</option>
                             </select>
-                            <a href="phpinfo.php"><button class="analysis">Color Analysis</button></a>
+                            <a href="Color Analysis.php"><button class="analysis">Color Analysis</button></a>
                         </div>
                         <div class="product-display">
                             <?php while ($row = mysqli_fetch_assoc($select)) {
