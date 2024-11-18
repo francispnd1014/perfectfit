@@ -53,17 +53,17 @@ try {
 }
 
 // Include the Intervention Image library
-require '../intervention-image-master/src/Intervention/Image/ImageManager.php';
-require '../intervention-image-master/src/Intervention/Image/Image.php';
-require '../intervention-image-master/src/Intervention/Image/AbstractDecoder.php';
-require '../intervention-image-master/src/Intervention/Image/AbstractDriver.php';
-require '../intervention-image-master/src/Intervention/Image/Commands/AbstractCommand.php';
-require '../intervention-image-master/src/Intervention/Image/Commands/ResizeCommand.php';
-require '../intervention-image-master/src/Intervention/Image/File.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Decoder.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Driver.php';
-require '../intervention-image-master/src/Intervention/Image/Gd/Commands/ResizeCommand.php';
-require '../intervention-image-master/src/Intervention/Image/Exceptions/NotSupportedException.php';
+require '../libs/intervention/src/Intervention/Image/ImageManager.php';
+require '../libs/intervention/src/Intervention/Image/Image.php';
+require '../libs/intervention/src/Intervention/Image/AbstractDecoder.php';
+require '../libs/intervention/src/Intervention/Image/AbstractDriver.php';
+require '../libs/intervention/src/Intervention/Image/Commands/AbstractCommand.php';
+require '../libs/intervention/src/Intervention/Image/Commands/ResizeCommand.php';
+require '../libs/intervention/src/Intervention/Image/File.php';
+require '../libs/intervention/src/Intervention/Image/Gd/Decoder.php';
+require '../libs/intervention/src/Intervention/Image/Gd/Driver.php';
+require '../libs/intervention/src/Intervention/Image/Gd/Commands/ResizeCommand.php';
+require '../libs/intervention/src/Intervention/Image/Exceptions/NotSupportedException.php';
 
 use Intervention\Image\ImageManager;
 
