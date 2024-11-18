@@ -428,7 +428,7 @@ $stmt->close();
         WHERE email = ? AND gown_id NOT IN (SELECT id FROM product WHERE status = 1)
         GROUP BY gown_id
         ORDER BY interaction_count DESC
-        LIMIT 2
+        LIMIT 5
     ";
             $stmt = $conn->prepare($user_interactions_query);
             $stmt->bind_param("s", $email);
