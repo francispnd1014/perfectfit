@@ -330,9 +330,9 @@ $select = mysqli_query($conn, $select_query);
                                                 <?php if ($rental_details) { ?>
                                                     <div class="rental-details small-font">
                                                         <p>Date Rented:</p>
-                                                        <p><?php echo htmlspecialchars($rental_details['date_rented']); ?></p>
+                                                        <p><?php echo htmlspecialchars(date('F j, Y', strtotime($rental_details['date_rented']))); ?></p>
                                                         <p>Date of Return:</p>
-                                                        <p><?php echo htmlspecialchars($rental_details['duedate']); ?></p>
+                                                        <p><?php echo htmlspecialchars(date('F j, Y', strtotime($rental_details['duedate']))); ?></p>
                                                     </div>
                                                 <?php } ?>
                                             </div>
