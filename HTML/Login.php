@@ -170,7 +170,7 @@ if (isset($_POST['forgot_submit'])) {
             // Content
             $mail->isHTML(true);
             $mail->Subject = 'Password Reset Request';
-            $mail->Body = "Click the link to reset your password: <a href='http://localhost/HTML/Forgot.php?token=$token'>Reset Password</a>";
+            $mail->Body = "Click the link to reset your password: <a href='http://app-perfectfit.com/HTML/Forgot.php?token=$token'>Reset Password</a>";
 
             $mail->send();
             $reset_success = "If an account exists with this email, a password reset link will be sent.";
@@ -247,6 +247,7 @@ if (isset($_POST['verify_code'])) {
 $conn->close();
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -269,7 +270,7 @@ $conn->close();
                 <input type="text" name="fname" class="input-field" placeholder="First Name" required>
                 <input type="text" name="sname" class="input-field" placeholder="Surname" required>
                 <input type="email" name="email" class="input-field" placeholder="Email" required>
-                <input type="text" name="contact" class="input-field" placeholder="Contact" required>
+                <input type="text" name="contact" class="input-field" placeholder="Contact" required maxlength="11" pattern="\d{11}" title="Cellphone">
                 <div class="input-field-container">
                     <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required autocomplete="new-password">
                     <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
@@ -323,7 +324,6 @@ $conn->close();
     <!-- Verification Modal -->
     <div id="verificationModal" class="modal" style="display: <?php echo isset($_POST['verify_code']) || !empty($register_success) ? 'block' : 'none'; ?>;">
         <div class="modal-content">
-            <span class="close" onclick="closeVerificationModal()">&times;</span>
             <h2>Verify Your Email</h2>
             <p>Enter the verification code sent to your email:</p>
             <form id="verificationForm" method="post">
@@ -346,7 +346,6 @@ $conn->close();
             </form>
         </div>
     </div>
-
     <div id="resetLinkSentModal" class="modal" style="display: <?php echo !empty($reset_success) ? 'block' : 'none'; ?>;">
         <div class="modal-content">
             <span class="close" onclick="closeResetLinkSentModal()">&times;</span>
@@ -355,7 +354,6 @@ $conn->close();
             <button class="submit-btn" onclick="closeResetLinkSentModal()">OK</button>
         </div>
     </div>
-
     <div id="emailUsedModal" class="modal" style="display: <?php echo !empty($register_error) && $register_error == 'This email has been used already.' ? 'block' : 'none'; ?>;">
         <div class="modal-content">
             <span class="close" onclick="closeEmailUsedModal()">&times;</span>
@@ -376,6 +374,7 @@ $conn->close();
                 closeResetLinkSentModal();
             }
         }
+
         const container = document.getElementById('container');
         const registerBtn = document.getElementById('register1');
         const loginBtn = document.getElementById('login1');
