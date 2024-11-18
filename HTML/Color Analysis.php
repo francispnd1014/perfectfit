@@ -47,37 +47,42 @@ try {
     exit();
 }
 
-// Average RGB calculation
 function getCenterColor($imagePath) {
-    $data = file_get_contents($imagePath);
-    $len = strlen($data);
-    $width = 800; // Assume average width (replace with known dimensions if available)
-    $height = 600; // Assume average height
-    $centerX = $width * 0.4;
-    $centerY = $height * 0.4;
-    $sampleWidth = $width * 0.2;
-    $sampleHeight = $height * 0.2;
+    // Read EXIF data for actual image dimensions
+    $exifData = exif_read_data($imagePath);
+    if (!$exifData || !isset($exifData['COMPUTED']['Width']) || !isset($exifData['COMPUTED']['Height'])) {
+        die("Cannot read image dimensions. Ensure the image has valid EXIF data.");
+    }
 
+    $width = $exifData['COMPUTED']['Width'];
+    $height = $exifData['COMPUTED']['Height'];
+
+    // Define the central region (20% of the image center)
+    $centerX = round($width * 0.4);
+    $centerY = round($height * 0.4);
+    $sampleWidth = round($width * 0.2);
+    $sampleHeight = round($height * 0.2);
+
+    $data = file_get_contents($imagePath);
+
+    // Pixel extraction logic
     $totalR = $totalG = $totalB = $totalPixels = 0;
+    $pixelStride = 3; // RGB components per pixel
 
     for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
         for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
-            // Approximate pixel index
-            $pixelIndex = ($y * $width + $x) * 3;
+            // Approximate pixel position in binary data (may need adjustment for specific JPEGs)
+            $pixelIndex = ($y * $width + $x) * $pixelStride;
 
-            if ($pixelIndex + 2 >= $len) {
-                break;
+            if ($pixelIndex + 2 >= strlen($data)) {
+                continue; // Skip out-of-bounds
             }
 
             $r = ord($data[$pixelIndex]);
             $g = ord($data[$pixelIndex + 1]);
             $b = ord($data[$pixelIndex + 2]);
 
-            // Skip white/black pixels
-            if (($r > 240 && $g > 240 && $b > 240) || ($r < 10 && $g < 10 && $b < 10)) {
-                continue;
-            }
-
+            // Accumulate RGB values
             $totalR += $r;
             $totalG += $g;
             $totalB += $b;
@@ -85,7 +90,7 @@ function getCenterColor($imagePath) {
         }
     }
 
-    // Prevent division by zero
+    // Avoid division by zero
     if ($totalPixels === 0) {
         return [255, 255, 255]; // Default to white
     }
