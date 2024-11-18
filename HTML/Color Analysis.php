@@ -54,6 +54,11 @@ try {
 
 // Include the Intervention Image library
 require '../intervention-image-master/src/Intervention/Image/ImageManager.php';
+require '../intervention-image-master/src/Intervention/Image/Image.php';
+require '../intervention-image-master/src/Intervention/Image/AbstractDecoder.php';
+require '../intervention-image-master/src/Intervention/Image/AbstractDriver.php';
+require '../intervention-image-master/src/Intervention/Image/Commands/AbstractCommand.php';
+require '../intervention-image-master/src/Intervention/Image/Commands/ResizeCommand.php';
 
 use Intervention\Image\ImageManager;
 
