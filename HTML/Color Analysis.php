@@ -1,31 +1,29 @@
 <?php
 session_start();
 
-// Clear the result on page load
+// Clear results on page load
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     unset($_SESSION['result']);
 }
 
-// Check if email is set in session
+// Ensure user is logged in
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
     exit();
 }
 
-// Database connection parameters
+// Database connection
 $servername = "localhost";
 $username = "root";
-$password = "";
+$password = "g8gbV0noL$3&fA6x-GAMER";
 $dbname = "perfectfit";
 
-// Create connection using try-catch
 try {
     $conn = new mysqli($servername, $username, $password, $dbname);
     if ($conn->connect_error) {
         throw new Exception("Connection failed: " . $conn->connect_error);
     }
 
-    // Get email from session and prepare statement
     $email = $_SESSION['email'];
     $stmt = $conn->prepare("SELECT fname, sname, pfp FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
@@ -49,50 +47,32 @@ try {
     exit();
 }
 
-// Function to get the average color of the central part of the image
+// Average RGB calculation
 function getFaceColor($imagePath) {
-    $imageData = file_get_contents($imagePath);
-    $image = imagecreatefromstring($imageData);
+    $data = file_get_contents($imagePath);
+    $len = strlen($data);
+    $totalR = $totalG = $totalB = $totalPixels = 0;
 
-    if (!$image) {
-        die("Failed to load image.");
+    // Approximate sampling for JPEG pixel analysis
+    for ($i = 0; $i < $len; $i += 4) {
+        $r = ord($data[$i]);
+        $g = ord($data[$i + 1]);
+        $b = ord($data[$i + 2]);
+
+        $totalR += $r;
+        $totalG += $g;
+        $totalB += $b;
+        $totalPixels++;
     }
-
-    $width = imagesx($image);
-    $height = imagesy($image);
-
-    // Define a central area for approximation (e.g., 20% of the image center)
-    $centerX = $width * 0.4;
-    $centerY = $height * 0.4;
-    $sampleWidth = $width * 0.2;
-    $sampleHeight = $height * 0.2;
-
-    $totalR = $totalG = $totalB = 0;
-    $totalPixels = 0;
-
-    for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
-        for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
-            $rgb = imagecolorat($image, $x, $y);
-            $r = ($rgb >> 16) & 0xFF;
-            $g = ($rgb >> 8) & 0xFF;
-            $b = $rgb & 0xFF;
-
-            $totalR += $r;
-            $totalG += $g;
-            $totalB += $b;
-            $totalPixels++;
-        }
-    }
-
-    imagedestroy($image);
 
     return [
         round($totalR / $totalPixels),
         round($totalG / $totalPixels),
-        round($totalB / $totalPixels)
+        round($totalB / $totalPixels),
     ];
 }
 
+// Skin tone analysis
 function analyzeSkinTone($avgR, $avgG, $avgB) {
     if ($avgR >= 220 && $avgG >= 210 && $avgB >= 190) {
         return "Very Fair";
@@ -111,7 +91,7 @@ function analyzeSkinTone($avgR, $avgG, $avgB) {
     }
 }
 
-// Handle the uploaded image
+// Handle uploaded image
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
     $imagePath = 'uploaded_img/' . basename($_FILES['skin_image']['name']);
 
@@ -136,10 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Home</title>
@@ -147,7 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
     <link rel="stylesheet" href="../CSS/Analysis.css">
     <script src="https://kit.fontawesome.com/a4c2475e10.js"></script>
 </head>
-
 <body>
     <div class="banner">
         <div class="navbar">
@@ -181,9 +158,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
                 <button type="submit">Upload and Analyze</button>
             </form>
             <br>
-            <br>
-            <br>
-            <br>
             <?php
             if (isset($_SESSION['result'])) {
                 $result = $_SESSION['result'];
@@ -197,24 +171,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
             ?>
         </div>
     </div>
-    <script>
-        function toggleDropdown() {
-            var dropdown = document.getElementById("myDropdown");
-            dropdown.classList.toggle("show");
-        }
-
-        window.onclick = function(event) {
-            if (!event.target.matches('.dropbtn')) {
-                var dropdowns = document.getElementsByClassName("dropdown-content");
-                for (var i = 0; i < dropdowns.length; i++) {
-                    var openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
-                    }
-                }
-            }
-        }
-    </script>
 </body>
-
 </html>
