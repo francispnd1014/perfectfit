@@ -473,6 +473,7 @@ a {
 .image {
   max-width: 248px;
   max-height: 365px;
+  overflow: hidden;
 }
 
 .image-container {
