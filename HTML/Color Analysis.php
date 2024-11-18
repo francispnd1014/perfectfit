@@ -52,14 +52,21 @@ try {
     exit();
 }
 
-// Include the Intervention Image library
+// Manually include the Intervention Image library files
+require '../intervention-image-master/src/Intervention/Image/ImageServiceProvider.php';
 require '../intervention-image-master/src/Intervention/Image/ImageManager.php';
+require '../intervention-image-master/src/Intervention/Image/AbstractDriver.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Driver.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Decoder.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Encoder.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Image.php';
+require '../intervention-image-master/src/Intervention/Image/Gd/Commands/ResizeCommand.php';
 
 use Intervention\Image\ImageManager;
 
 // Function to get the average color of the central part of the image
 function getFaceColor($imagePath) {
-    $manager = new ImageManager();
+    $manager = new ImageManager(['driver' => 'gd']);
     $image = $manager->make($imagePath);
 
     $width = $image->width();
