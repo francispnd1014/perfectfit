@@ -52,17 +52,18 @@ try {
     exit();
 }
 
+// Include the Intervention Image library
+require 'libs/intervention/src/ImageManager.php';
+
+use Intervention\Image\ImageManager;
+
 // Function to get the average color of the central part of the image
 function getFaceColor($imagePath) {
-    $imageData = file_get_contents($imagePath);
-    $image = imagecreatefromstring($imageData);
+    $manager = new ImageManager();
+    $image = $manager->make($imagePath);
 
-    if (!$image) {
-        die("Failed to load image.");
-    }
-
-    $width = imagesx($image);
-    $height = imagesy($image);
+    $width = $image->width();
+    $height = $image->height();
 
     // Define a central area for approximation (e.g., 20% of the image center)
     $centerX = $width * 0.4;
@@ -75,19 +76,13 @@ function getFaceColor($imagePath) {
 
     for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
         for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
-            $rgb = imagecolorat($image, $x, $y);
-            $r = ($rgb >> 16) & 0xFF;
-            $g = ($rgb >> 8) & 0xFF;
-            $b = $rgb & 0xFF;
-
-            $totalR += $r;
-            $totalG += $g;
-            $totalB += $b;
+            $color = $image->pickColor($x, $y, 'array');
+            $totalR += $color[0];
+            $totalG += $color[1];
+            $totalB += $color[2];
             $totalPixels++;
         }
     }
-
-    imagedestroy($image);
 
     return [
         round($totalR / $totalPixels),
@@ -138,7 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
