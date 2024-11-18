@@ -56,6 +56,7 @@ try {
 require '../intervention-image-master/src/Intervention/Image/ImageManager.php';
 require '../intervention-image-master/src/Intervention/Image/AbstractDriver.php';
 require '../intervention-image-master/src/Intervention/Image/AbstractDecoder.php';
+require '../intervention-image-master/src/Intervention/Image/AbstractEncoder.php';
 require '../intervention-image-master/src/Intervention/Image/Gd/Driver.php';
 require '../intervention-image-master/src/Intervention/Image/Gd/Decoder.php';
 require '../intervention-image-master/src/Intervention/Image/Gd/Encoder.php';
