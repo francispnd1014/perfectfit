@@ -326,7 +326,16 @@ $select = mysqli_query($conn, $select_query);
                                 <a href="Preview.php?id=<?php echo $row['id']; ?>" class="card-link">
                                     <div class="card">
                                         <?php if ($row['status'] == 1) { ?>
-
+                                            <div class="rented-overlay">
+                                                <?php if ($rental_details) { ?>
+                                                    <div class="rental-details small-font">
+                                                        <p>Date Rented:</p>
+                                                        <p><?php echo htmlspecialchars(date('F j, Y', strtotime($rental_details['date_rented']))); ?></p>
+                                                        <p>Date of Return:</p>
+                                                        <p><?php echo htmlspecialchars(date('F j, Y', strtotime($rental_details['duedate']))); ?></p>
+                                                    </div>
+                                                <?php } ?>
+                                            </div>
                                         <?php } ?>
 
                                         <div class="image">
