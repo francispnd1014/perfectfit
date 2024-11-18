@@ -757,3 +757,17 @@ a {
       opacity: 1;
   }
 }
+@media (max-width: 868px) {
+  .cols-container {
+    flex-direction: column-reverse;
+  }
+
+  .left-col,
+  .right-col {
+    max-width: 100%;
+  }
+
+  .left-col {
+    margin: 0 auto;
+  }
+}
