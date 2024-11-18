@@ -93,7 +93,7 @@ function analyzeSkinTone($avgR, $avgG, $avgB) {
         return "Fair";
     } elseif ($brightness > 170) {
         return "Medium Fair";
-    } elseif ($brightness > 140) {
+    } elseif ($brightness > 130) {
         return "Medium";
     } elseif ($brightness > 110) {
         return "Olive";
