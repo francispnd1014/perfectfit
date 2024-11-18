@@ -323,7 +323,7 @@ $select = mysqli_query($conn, $select_query);
                                     $stmt->close();
                                 }
                             ?>
-                                <a href="Preview.php?id=<?php echo $row['id']; ?>" class="card-link">
+                                <!-- <a href="Preview.php?id=<?php echo $row['id']; ?>" class="card-link">
                                     <div class="card">
                                         <?php if ($row['status'] == 1) { ?>
                                             <div class="rented-overlay">
@@ -336,7 +336,7 @@ $select = mysqli_query($conn, $select_query);
                                                     </div>
                                                 <?php } ?>
                                             </div>
-                                        <?php } ?>
+                                        <?php } ?> -->
 
                                         <div class="image">
                                             <?php
