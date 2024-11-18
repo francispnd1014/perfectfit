@@ -93,12 +93,12 @@ try {
             <div class="slideshow-container">
                 <div class="titleheader overlay">
                     <div style="display: flex; position: relative; justify-content: center; align-items: center; width: 100%;">
-                        <img class="arrowright" src="https:
-                        <div style="position: relative; display: flex; justify-content: center; align-items: center;">
+                    <img class="arrowright" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-1.svg" alt="Arrow 1">
+                    <div style="position: relative; display: flex; justify-content: center; align-items: center;">
                             <span class="perfectfit">PERFECT FIT</span>
                         </div>
-                        <img class="arrowleft" src="https:
-                    </div>
+                        <img class="arrowleft" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-2.svg" alt="Arrow 2">
+                        </div>
                     <h1 class="gown">RICH SABINIAN</h1>
                     <p class="intro">PerfectFit: Gown Rental believes every occasion deserves a showstopping outfit. Explore our stunning collection of gowns and find the perfect style to express your unique personality and make your special event unforgettable.</p>
                 </div>
