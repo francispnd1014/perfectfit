@@ -76,7 +76,13 @@ if (isset($_POST['submitr'])) {
     $cpassword = mysqli_real_escape_string($conn, $_POST['cpassword1']);
     $default_pfp = 'uploaded_img/DEF.jpg';
 
-    if ($password !== $cpassword) {
+    // Check if email already exists
+    $email_check_query = "SELECT * FROM users WHERE email='$email'";
+    $email_check_result = $conn->query($email_check_query);
+
+    if ($email_check_result->num_rows > 0) {
+        $register_error = "This email has been used already.";
+    } elseif ($password !== $cpassword) {
         $register_error = "Passwords do not match!";
     } else {
         // Hash the password
@@ -164,7 +170,7 @@ if (isset($_POST['forgot_submit'])) {
             // Content
             $mail->isHTML(true);
             $mail->Subject = 'Password Reset Request';
-            $mail->Body = "Click the link to reset your password: <a href='http://app-perfectfit.com/HTML/Forgot.php?token=$token'>Reset Password</a>";
+            $mail->Body = "Click the link to reset your password: <a href='http://localhost/HTML/Forgot.php?token=$token'>Reset Password</a>";
 
             $mail->send();
             $reset_success = "If an account exists with this email, a password reset link will be sent.";
@@ -241,7 +247,6 @@ if (isset($_POST['verify_code'])) {
 $conn->close();
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -257,67 +262,68 @@ $conn->close();
 </head>
 
 <body>
-        <div class="container" id="container">
-            <div class="form-container sign-up">
-                <form id="register" class="input-group2" action="" method="post" autocomplete="off" onsubmit="return validatePassword()">
-                    <h1>Sign Up</h1>
-                    <input type="text" name="fname" class="input-field" placeholder="First Name" required>
-                    <input type="text" name="sname" class="input-field" placeholder="Surname" required>
-                    <input type="email" name="email" class="input-field" placeholder="Email" required>
-                    <input type="text" name="contact" class="input-field" placeholder="Contact" required maxlength="11" pattern="\d{11}" title="Cellphone">
-                    <div class="input-field-container">
-                        <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required autocomplete="new-password">
-                        <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
-                    </div>
-                    <div class="input-field-container">
-                        <input type="password" name="cpassword1" id="cpassword1" class="input-field" placeholder="Confirm Password" onkeyup="checkPasswordMatch()" required autocomplete="new-password">
-                        <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('cpassword1')"></i>
-                    </div>
-                    <div class="password-warning" id="password-warning">Passwords do not match!</div>
-                    <?php if (!empty($register_error)) : ?>
-                        <div class="warning-message"><?php echo $register_error; ?></div>
-                    <?php elseif (!empty($register_success)) : ?>
-                        <div class="success-message"><?php echo $register_success; ?></div>
-                    <?php endif; ?>
-                    <input type="submit" name="submitr" value="Submit" class="submit-btn">
-                </form>
-            </div>
+    <div class="container" id="container">
+        <div class="form-container sign-up">
+            <form id="register" class="input-group2" action="" method="post" autocomplete="off" onsubmit="return validatePassword()">
+                <h1>Sign Up</h1>
+                <input type="text" name="fname" class="input-field" placeholder="First Name" required>
+                <input type="text" name="sname" class="input-field" placeholder="Surname" required>
+                <input type="email" name="email" class="input-field" placeholder="Email" required>
+                <input type="text" name="contact" class="input-field" placeholder="Contact" required>
+                <div class="input-field-container">
+                    <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required autocomplete="new-password">
+                    <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
+                </div>
+                <div class="input-field-container">
+                    <input type="password" name="cpassword1" id="cpassword1" class="input-field" placeholder="Confirm Password" onkeyup="checkPasswordMatch()" required autocomplete="new-password">
+                    <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('cpassword1')"></i>
+                </div>
+                <div class="password-warning" id="password-warning">Passwords do not match!</div>
+                <?php if (!empty($register_error)) : ?>
+                    <div class="warning-message"><?php echo $register_error; ?></div>
+                <?php elseif (!empty($register_success)) : ?>
+                    <div class="success-message"><?php echo $register_success; ?></div>
+                <?php endif; ?>
+                <input type="submit" name="submitr" value="Submit" class="submit-btn">
+            </form>
+        </div>
 
-            <div class="form-container sign-in">
-                <form id="login" class="input-group" action="" method="post" autocomplete="on">
-                    <a href="../HTML/Index.php"><img src="../IMAGES/RICH SABINIANS.png" class="logo"></a>
-                    <h1>Sign In</h1>
-                    <input type="email" name="email" class="input-field" placeholder="Email" required>
-                    <div class="input-field-container">
-                        <input type="password" name="password" id="login_password" class="input-field" placeholder="Password" required>
-                        <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('login_password')"></i>
-                    </div>
-                    <?php if (!empty($login_error)) : ?>
-                        <div class="warning-message"><?php echo $login_error; ?></div>
-                    <?php endif; ?>
-                    <a href="javascript:void(0);" onclick="openForgotPasswordModal()">forgot password?</a>
-                    <input type="submit" name="submit" value="Login" class="submit-btn">
-                </form>
-            </div>
-            <div class="toggle-container">
-                <div class="toggle">
-                    <div class="toggle-panel toggle-left">
-                        <h1>Welcome Back!</h1>
-                        <p>Enter your personal details to use all of site features</p>
-                        <button class="hidden" id="login1">Sign In</button>
-                    </div>
-                    <div class="toggle-panel toggle-right">
-                        <h1>Hello, Friend!</h1>
-                        <p>Register with your personal details to use all of site features</p>
-                        <button class="hidden" id="register1">Sign Up</button>
-                    </div>
+        <div class="form-container sign-in">
+            <form id="login" class="input-group" action="" method="post" autocomplete="on">
+                <a href="../HTML/Index.php"><img src="../IMAGES/RICH SABINIANS.png" class="logo"></a>
+                <h1>Sign In</h1>
+                <input type="email" name="email" class="input-field" placeholder="Email" required>
+                <div class="input-field-container">
+                    <input type="password" name="password" id="login_password" class="input-field" placeholder="Password" required>
+                    <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('login_password')"></i>
+                </div>
+                <?php if (!empty($login_error)) : ?>
+                    <div class="warning-message"><?php echo $login_error; ?></div>
+                <?php endif; ?>
+                <a href="javascript:void(0);" onclick="openForgotPasswordModal()">forgot password?</a>
+                <input type="submit" name="submit" value="Login" class="submit-btn">
+            </form>
+        </div>
+        <div class="toggle-container">
+            <div class="toggle">
+                <div class="toggle-panel toggle-left">
+                    <h1>Welcome Back!</h1>
+                    <p>Enter your personal details to use all of site features</p>
+                    <button class="hidden" id="login1">Sign In</button>
+                </div>
+                <div class="toggle-panel toggle-right">
+                    <h1>Hello, Friend!</h1>
+                    <p>Register with your personal details to use all of site features</p>
+                    <button class="hidden" id="register1">Sign Up</button>
                 </div>
             </div>
         </div>
+    </div>
 
     <!-- Verification Modal -->
     <div id="verificationModal" class="modal" style="display: <?php echo isset($_POST['verify_code']) || !empty($register_success) ? 'block' : 'none'; ?>;">
         <div class="modal-content">
+            <span class="close" onclick="closeVerificationModal()">&times;</span>
             <h2>Verify Your Email</h2>
             <p>Enter the verification code sent to your email:</p>
             <form id="verificationForm" method="post">
@@ -340,12 +346,22 @@ $conn->close();
             </form>
         </div>
     </div>
+
     <div id="resetLinkSentModal" class="modal" style="display: <?php echo !empty($reset_success) ? 'block' : 'none'; ?>;">
         <div class="modal-content">
             <span class="close" onclick="closeResetLinkSentModal()">&times;</span>
             <h2>Reset Link Sent</h2>
             <p><?php echo $reset_success; ?></p>
             <button class="submit-btn" onclick="closeResetLinkSentModal()">OK</button>
+        </div>
+    </div>
+
+    <div id="emailUsedModal" class="modal" style="display: <?php echo !empty($register_error) && $register_error == 'This email has been used already.' ? 'block' : 'none'; ?>;">
+        <div class="modal-content">
+            <span class="close" onclick="closeEmailUsedModal()">&times;</span>
+            <h2>Email Already Used</h2>
+            <p><?php echo $register_error; ?></p>
+            <button class="submit-btn" onclick="closeEmailUsedModal()">OK</button>
         </div>
     </div>
 
@@ -360,7 +376,6 @@ $conn->close();
                 closeResetLinkSentModal();
             }
         }
-
         const container = document.getElementById('container');
         const registerBtn = document.getElementById('register1');
         const loginBtn = document.getElementById('login1');
@@ -432,6 +447,17 @@ $conn->close();
             var modal = document.getElementById('forgotPasswordModal');
             if (event.target == modal) {
                 closeForgotPasswordModal();
+            }
+        }
+
+        function closeEmailUsedModal() {
+            document.getElementById('emailUsedModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            var modal = document.getElementById('emailUsedModal');
+            if (event.target == modal) {
+                closeEmailUsedModal();
             }
         }
     </script>
