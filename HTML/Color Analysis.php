@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
 
 // Clear results on page load
@@ -51,72 +48,56 @@ try {
 }
 
 // Average RGB calculation
+// Average RGB calculation with improved accuracy
 function getFaceColor($imagePath) {
-    $imageInfo = getimagesize($imagePath);
-    $imageType = $imageInfo[2];
-
-    if ($imageType === IMAGETYPE_JPEG) {
-        $image = imagecreatefromjpeg($imagePath);
-    } elseif ($imageType === IMAGETYPE_PNG) {
-        $image = imagecreatefrompng($imagePath);
-    } else {
-        die("Unsupported image type. Please upload a JPEG or PNG file.");
-    }
-
-    $width = imagesx($image);
-    $height = imagesy($image);
-
-    // Focus on the central 50% region of the image
-    $startX = (int)($width * 0.25);
-    $startY = (int)($height * 0.25);
-    $endX = (int)($width * 0.75);
-    $endY = (int)($height * 0.75);
-
+    $data = file_get_contents($imagePath);
+    $len = strlen($data);
     $totalR = $totalG = $totalB = $totalPixels = 0;
 
-    for ($x = $startX; $x < $endX; $x++) {
-        for ($y = $startY; $y < $endY; $y++) {
-            $rgb = imagecolorat($image, $x, $y);
-            $r = ($rgb >> 16) & 0xFF;
-            $g = ($rgb >> 8) & 0xFF;
-            $b = $rgb & 0xFF;
+    // Iterate over binary data to sample pixels
+    for ($i = 0; $i < $len; $i += 4) {
+        $r = ord($data[$i]);
+        $g = ord($data[$i + 1]);
+        $b = ord($data[$i + 2]);
 
-            // Ignore overly bright (white) or overly dark (black) pixels
-            if (!($r > 240 && $g > 240 && $b > 240) && !($r < 15 && $g < 15 && $b < 15)) {
-                $totalR += $r;
-                $totalG += $g;
-                $totalB += $b;
-                $totalPixels++;
-            }
+        // Skip pure white or black pixels
+        if (($r > 240 && $g > 240 && $b > 240) || ($r < 10 && $g < 10 && $b < 10)) {
+            continue;
         }
+
+        $totalR += $r;
+        $totalG += $g;
+        $totalB += $b;
+        $totalPixels++;
     }
 
-    imagedestroy($image);
-
-    if ($totalPixels > 0) {
-        return [
-            round($totalR / $totalPixels),
-            round($totalG / $totalPixels),
-            round($totalB / $totalPixels),
-        ];
-    } else {
-        return [255, 255, 255]; // Default to white if no valid pixels
+    // Prevent division by zero if all pixels are skipped
+    if ($totalPixels === 0) {
+        return [255, 255, 255]; // Default to white
     }
+
+    return [
+        round($totalR / $totalPixels),
+        round($totalG / $totalPixels),
+        round($totalB / $totalPixels),
+    ];
 }
 
-// Skin tone analysis with refined thresholds
+// Improved skin tone analysis
 function analyzeSkinTone($avgR, $avgG, $avgB) {
-    if ($avgR >= 220 && $avgG >= 210 && $avgB >= 190) {
+    $brightness = ($avgR + $avgG + $avgB) / 3;
+
+    if ($brightness > 220) {
         return "Very Fair";
-    } elseif ($avgR >= 200 && $avgG >= 180 && $avgB >= 150) {
+    } elseif ($brightness > 200) {
         return "Fair";
-    } elseif ($avgR >= 180 && $avgG >= 160 && $avgB >= 140) {
+    } elseif ($brightness > 170) {
         return "Medium Fair";
-    } elseif ($avgR >= 160 && $avgG >= 140 && $avgB >= 120) {
+    } elseif ($brightness > 140) {
         return "Medium";
-    } elseif ($avgR >= 140 && $avgG >= 120 && $avgB >= 100) {
+    } elseif ($brightness > 110) {
         return "Olive";
-    } elseif ($avgR >= 120 && $avgG >= 100 && $avgB >= 80) {
+    } elseif ($brightness > 80) {
         return "Naturally Brown";
     } else {
         return "Dark Brown";
@@ -146,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
         echo "Failed to upload image.";
     }
 }
+
 ?>
 
 <!DOCTYPE html>
