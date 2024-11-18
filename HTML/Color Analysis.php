@@ -53,7 +53,7 @@ try {
 }
 
 // Include the Intervention Image library
-require 'libs/intervention/src/ImageManager.php';
+require '../intervention-image-master/src/Intervention/Image/ImageManager.php';
 
 use Intervention\Image\ImageManager;
 
