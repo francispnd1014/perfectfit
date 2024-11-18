@@ -47,40 +47,19 @@ try {
     exit();
 }
 
-// Average RGB calculation
+// Average RGB calculation using GD library
 function getFaceColor($imagePath) {
-    $imageInfo = getimagesize($imagePath);
-    $mime = $imageInfo['mime'];
+    $image = imagecreatefromjpeg($imagePath);
+    $width = imagesx($image);
+    $height = imagesy($image);
+    $totalR = $totalG = $totalB = $totalPixels = 0;
 
-    if ($mime !== 'image/jpeg') {
-        die("Only JPEG files are supported.");
-    }
-
-    // Open file as binary and analyze chunks
-    $file = fopen($imagePath, 'rb');
-    $data = fread($file, filesize($imagePath));
-    fclose($file);
-
-    $width = $imageInfo[0];
-    $height = $imageInfo[1];
-
-    // Sampling area in the center (20% of the image dimensions)
-    $centerX = $width * 0.4;
-    $centerY = $height * 0.4;
-    $sampleWidth = $width * 0.2;
-    $sampleHeight = $height * 0.2;
-
-    // Initialize totals for RGB values
-    $totalR = $totalG = $totalB = 0;
-    $totalPixels = 0;
-
-    // Simplified pixel sampling
-    for ($y = $centerY; $y < $centerY + $sampleHeight; $y++) {
-        for ($x = $centerX; $x < $centerX + $sampleWidth; $x++) {
-            $pixelOffset = ($y * $width + $x) * 3; // Calculate pixel position in binary
-            $r = ord($data[$pixelOffset]);
-            $g = ord($data[$pixelOffset + 1]);
-            $b = ord($data[$pixelOffset + 2]);
+    for ($x = 0; $x < $width; $x++) {
+        for ($y = 0; $y < $height; $y++) {
+            $rgb = imagecolorat($image, $x, $y);
+            $r = ($rgb >> 16) & 0xFF;
+            $g = ($rgb >> 8) & 0xFF;
+            $b = $rgb & 0xFF;
 
             $totalR += $r;
             $totalG += $g;
@@ -89,22 +68,17 @@ function getFaceColor($imagePath) {
         }
     }
 
+    imagedestroy($image);
+
     return [
         round($totalR / $totalPixels),
         round($totalG / $totalPixels),
-        round($totalB / $totalPixels)
+        round($totalB / $totalPixels),
     ];
 }
 
+// Skin tone analysis
 function analyzeSkinTone($avgR, $avgG, $avgB) {
-    // Check for extreme light or dark values
-    if ($avgR >= 240 && $avgG >= 240 && $avgB >= 240) {
-        return "Pale (White)";
-    } elseif ($avgR <= 50 && $avgG <= 50 && $avgB <= 50) {
-        return "Very Dark Brown";
-    }
-
-    // Regular thresholds for skin tones
     if ($avgR >= 220 && $avgG >= 210 && $avgB >= 190) {
         return "Very Fair";
     } elseif ($avgR >= 200 && $avgG >= 180 && $avgB >= 160) {
