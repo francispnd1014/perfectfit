@@ -15,7 +15,6 @@ if (!isset($_SESSION['email'])) {
     exit();
 }
 
-
 // Database connection parameters
 $servername = "localhost";
 $username = "root";
@@ -169,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
                 'imagePath' => $imagePath
             ];
         } else {
+            error_log("Failed to move uploaded file.");
             echo "Failed to upload image.";
         }
     }
