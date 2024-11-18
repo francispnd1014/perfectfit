@@ -416,7 +416,7 @@ $stmt->close();
             </main>
         </div>
 
-        <?php
+<?php
 // Fetch recommended products based on user interactions
 function get_recommended_products($conn, $email)
 {
@@ -462,14 +462,14 @@ function get_recommended_products($conn, $email)
     $all_recommended_gowns = array_unique(array_merge($user_interacted_gowns, $recommended_gowns));
     shuffle($all_recommended_gowns);
 
-    // If no recommendations are found, fetch some popular gowns as a fallback
-    if (empty($all_recommended_gowns)) {
+    // If fewer than 5 recommendations are found, fetch some popular gowns as a fallback
+    if (count($all_recommended_gowns) < 5) {
         $popular_gowns_query = "
             SELECT id
             FROM product
             WHERE status != 1
             ORDER BY RAND()
-            LIMIT 5
+            LIMIT " . (5 - count($all_recommended_gowns)) . "
         ";
         $result = $conn->query($popular_gowns_query);
         while ($row = $result->fetch_assoc()) {
