@@ -1,5 +1,8 @@
 <?php
 session_start();
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
@@ -236,6 +239,52 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
         </div>
     </div>
     <script>
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
         var users = <?php echo json_encode($users); ?>;
         document.addEventListener('DOMContentLoaded', function() {
             var totalUsersCard = document.getElementById('totalUsersCard');
@@ -263,7 +312,7 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
             dropdown.classList.toggle("show");
         }
 
-        
+
         window.onclick = function(event) {
             var dropdowns = document.getElementsByClassName("dropdown");
             for (var i = 0; i < dropdowns.length; i++) {
@@ -273,7 +322,7 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
                 }
             }
         }
-        
+
         const revenueChart = new Chart(document.getElementById('revenueChart'), {
             type: 'line',
             data: {
@@ -297,7 +346,7 @@ while ($row = $monthlyRevenueResult->fetch_assoc()) {
             }
         });
 
-        
+
         const categoryChart = new Chart(document.getElementById('categoryChart'), {
             type: 'doughnut',
             data: {

@@ -42,12 +42,12 @@
             </div>
             <div class="col">
                 <h3>LOCATION</h3>
-                <p><a href="https:
+                <p><a href="https://www.google.com/maps/place/Rich+Sabinian+dress+shop/@15.1455783,120.5756874,17z/data=!3m1!4b1!4m6!3m5!1s0x3396f3376d4710c9:0xe98a262fadbfa4f9!8m2!3d15.1455783!4d120.5782623!16s%2Fg%2F11g0wgfhjj?entry=ttu&g_ep=EgoyMDI0MDkzMC4wIKXMDSoASAFQAw%3D%3D"><i class="fa-solid fa-location-dot"></i> #18 Purok 1, Angeles, Pampanga</a></p>
             </div>
             <div class="col">
                 <h3>CONTACT US</h3>
                 <p><i class="fa-solid fa-phone-volume"></i> 0916 460 5072</p>
-                <p><a href="https:
+                <p><a href="https://www.facebook.com/ritche.sabinian"><i class="fa-brands fa-facebook"></i> facebook.com/ritche.sabinian</a></p>
                 <p><i class="fa-solid fa-envelope"></i> richsabinianpampang@gmail.com</p>
             </div>
         </div>

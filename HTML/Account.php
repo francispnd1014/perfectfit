@@ -1,5 +1,8 @@
 <?php
 session_start();
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
@@ -65,7 +68,7 @@ if ($fav_result->num_rows > 0) {
     while ($fav_row = $fav_result->fetch_assoc()) {
         $gown_names = explode(',', $fav_row['gown_name']);
         foreach ($gown_names as $gown_name) {
-            $gown_name = trim($gown_name); 
+            $gown_name = trim($gown_name);
             $product_query = "SELECT id, img FROM product WHERE name='$gown_name'";
             $product_result = $conn->query($product_query);
             if ($product_result->num_rows > 0) {
@@ -96,20 +99,20 @@ if ($rent_result->num_rows > 0) {
     while ($rent_row = $rent_result->fetch_assoc()) {
         $rented_gown_names = explode(',', $rent_row['gownname_rented']);
         foreach ($rented_gown_names as $rented_gown_name) {
-            $rented_gown_name = trim($rented_gown_name); 
+            $rented_gown_name = trim($rented_gown_name);
             $product_query = "SELECT id, img, price FROM product WHERE name='$rented_gown_name'";
             $product_result = $conn->query($product_query);
             if ($product_result->num_rows > 0) {
                 while ($product_row = $product_result->fetch_assoc()) {
-                    $product_row['request'] = $rent_row['request']; 
-                    $product_row['service'] = $rent_row['service']; 
-                    $product_row['date_rented'] = $rent_row['date_rented']; 
-                    $product_row['duedate'] = $rent_row['duedate']; 
-                    $product_row['returned_date'] = $rent_row['returned_date']; 
-                    $product_row['total'] = $rent_row['total']; 
-                    $product_row['address'] = $rent_row['address']; 
-                    $product_row['reason'] = $rent_row['reason']; 
-                    $product_row['rent_id'] = $rent_row['id']; 
+                    $product_row['request'] = $rent_row['request'];
+                    $product_row['service'] = $rent_row['service'];
+                    $product_row['date_rented'] = $rent_row['date_rented'];
+                    $product_row['duedate'] = $rent_row['duedate'];
+                    $product_row['returned_date'] = $rent_row['returned_date'];
+                    $product_row['total'] = $rent_row['total'];
+                    $product_row['address'] = $rent_row['address'];
+                    $product_row['reason'] = $rent_row['reason'];
+                    $product_row['rent_id'] = $rent_row['id'];
                     $rented_gown_images[] = $product_row;
                 }
             }
@@ -187,9 +190,9 @@ if ($rent_result->num_rows > 0) {
                                             <?php
                                             $images = @unserialize($gown['img']);
                                             if ($images === false && $gown['img'] !== 'b:0;') {
-                                                $images = [$gown['img']]; 
+                                                $images = [$gown['img']];
                                             }
-                                            
+
                                             if (!empty($images)) {
                                                 $image = $images[0];
                                                 echo '<img class="grid-item" src="uploaded_img/' . htmlspecialchars($image) . '" alt="Gown Image" />';
@@ -355,9 +358,9 @@ if ($rent_result->num_rows > 0) {
                                             <?php
                                             $images = @unserialize($rented_gown['img']);
                                             if ($images === false && $rented_gown['img'] !== 'b:0;') {
-                                                $images = [$rented_gown['img']]; 
+                                                $images = [$rented_gown['img']];
                                             }
-                                            
+
                                             if (!empty($images)) {
                                                 $image = $images[0];
                                                 echo '<img class="grid-item" src="uploaded_img/' . htmlspecialchars($image) . '" alt="Rented Gown Image" />';
@@ -508,7 +511,53 @@ if ($rent_result->num_rows > 0) {
     </div>
 
     <script>
-        
+        // Replace your existing history handling code with this:
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
         class ModalHandler {
             constructor() {
                 this.selectedOrderId = null;
@@ -523,7 +572,7 @@ if ($rent_result->num_rows > 0) {
             }
 
             attachEventListeners() {
-                
+
                 document.querySelectorAll('.cancel-order-btn').forEach(button => {
                     button.addEventListener('click', () => {
                         this.selectedOrderId = button.getAttribute('data-id');
@@ -531,7 +580,7 @@ if ($rent_result->num_rows > 0) {
                     });
                 });
 
-                
+
                 document.querySelectorAll('.pay-order-btn').forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -540,12 +589,12 @@ if ($rent_result->num_rows > 0) {
                     });
                 });
 
-                
+
                 document.getElementById('confirmYes').addEventListener('click', () => this.handleCancelOrder());
                 document.getElementById('confirmPaymentYes').addEventListener('click', () => this.handlePaymentConfirmation());
                 document.getElementById('successOk').addEventListener('click', () => this.handleSuccess());
 
-                
+
                 document.querySelectorAll('.close, .payment-close, #confirmNo, #confirmPaymentNo').forEach(element => {
                     element.addEventListener('click', () => this.hideAllModals());
                 });
@@ -620,7 +669,7 @@ if ($rent_result->num_rows > 0) {
             }
         }
 
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             const modalHandler = new ModalHandler();
         });
@@ -670,7 +719,7 @@ if ($rent_result->num_rows > 0) {
                     });
             }
 
-            
+
             window.onclick = function(event) {
                 if (event.target == modal) {
                     modal.style.display = 'none';
@@ -682,9 +731,9 @@ if ($rent_result->num_rows > 0) {
             }
         }
 
-        
+
         document.addEventListener('DOMContentLoaded', () => {
-            
+
             document.querySelectorAll('.pay-order-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -715,7 +764,7 @@ if ($rent_result->num_rows > 0) {
             const sections = document.querySelectorAll('.photos');
             const listItems = document.querySelectorAll('nav ul li a');
 
-            
+
             sections.forEach(section => {
                 section.classList.add('hidden');
                 section.classList.remove('active');
@@ -727,19 +776,19 @@ if ($rent_result->num_rows > 0) {
                 item.classList.remove('bold');
             });
 
-            
+
             const selectedSection = document.getElementById(sectionId);
             selectedSection.classList.remove('hidden');
             selectedSection.classList.remove('fade-out');
             selectedSection.classList.add('fade-in');
             selectedSection.classList.add('active');
 
-            
+
             const clickedItem = document.querySelector(`nav ul li a[href="#${sectionId}"]`);
             clickedItem.classList.add('bold');
         }
 
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             showSection('favorite');
             document.querySelector('nav ul li a[href="#favorite"]').classList.add('bold');
@@ -772,7 +821,7 @@ if ($rent_result->num_rows > 0) {
                         .then(data => {
                             if (data.status === 'success') {
                                 alert(data.message);
-                                location.reload(); 
+                                location.reload();
                             } else {
                                 alert(data.message);
                             }

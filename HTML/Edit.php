@@ -1,6 +1,8 @@
 <?php
 session_start();
-
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
     exit();
@@ -41,7 +43,7 @@ if (isset($_POST['edit_product'])) {
     } else {
         $existing_images = @unserialize($product['img']);
         if ($existing_images === false && $product['img'] !== 'b:0;') {
-            $existing_images = [$product['img']]; 
+            $existing_images = [$product['img']];
         }
 
         $new_image_paths = [];
@@ -75,27 +77,27 @@ $product_id = isset($_POST['product_id']) ? $_POST['product_id'] : (isset($produ
 if (isset($_POST['delete_image']) && $product_id) {
     $image_to_delete = $_POST['delete_image'];
 
-    
+
     $query = "SELECT img FROM product WHERE id = $product_id";
     $result = mysqli_query($conn, $query);
     $product = mysqli_fetch_assoc($result);
 
     $images = @unserialize($product['img']);
     if ($images === false && $product['img'] !== 'b:0;') {
-        $images = [$product['img']]; 
+        $images = [$product['img']];
     }
 
-    
+
     if (($key = array_search($image_to_delete, $images)) !== false) {
         unset($images[$key]);
 
-        
+
         $updated_images = serialize(array_values($images));
 
-        
+
         $update_query = "UPDATE product SET img='$updated_images' WHERE id=$product_id";
         if (mysqli_query($conn, $update_query)) {
-            
+
             $image_path = 'uploaded_img/' . $image_to_delete;
             if (file_exists($image_path)) {
                 unlink($image_path);
@@ -256,9 +258,9 @@ $conn->close();
                             <?php
                             $images = @unserialize($product['img']);
                             if ($images === false && $product['img'] !== 'b:0;') {
-                                $images = [$product['img']]; 
+                                $images = [$product['img']];
                             }
-                            
+
                             if (!empty($images)) {
                                 foreach ($images as $image) {
                                     echo '<div class="image-container" style="display: inline-block; position: relative; margin: 5px;">';
@@ -286,6 +288,54 @@ $conn->close();
     </div>
 
     <script>
+        // Replace your existing history handling code with this:
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
+
         function toggleDropdown() {
             var dropdown = document.getElementById("myDropdown");
             dropdown.classList.toggle("show");
@@ -316,7 +366,7 @@ $conn->close();
             window.location.href = 'CRUD.php';
         }
 
-        
+
         window.onclick = function(event) {
             var modal = document.getElementById("successModal");
             if (event.target == modal) {

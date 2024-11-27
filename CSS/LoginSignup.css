@@ -351,6 +351,32 @@ body {
     width: 50%;
 }
 
+.gender-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.radio-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.radio-group label {
+    margin-left: 5px;
+    font-size: 15px;
+}
+
+.radio-group input[type="radio"] {
+    cursor: pointer;
+}
+
+.password-length-warning {
+    display: none;
+    color: red;
+}
+
 @media screen and (max-width: 768px) {
     .logo {
         width: 190px;
@@ -385,3 +411,4 @@ body {
         outline: none;
     }
 }
+

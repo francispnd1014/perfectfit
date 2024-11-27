@@ -1,6 +1,8 @@
 <?php
 session_start();
-
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
     exit();
@@ -20,7 +22,7 @@ if ($conn->connect_error) {
 }
 
 
-$email = $_SESSION['email']; 
+$email = $_SESSION['email'];
 
 $query = "SELECT fname, sname, pfp FROM users WHERE email='$email'";
 $result = $conn->query($query);
@@ -279,7 +281,7 @@ $select = mysqli_query($conn, $select_query);
                             <h4 class="category-filter">Sizes</h4>
                             <form class="filter-form" method="GET" id="filterForm">
                                 <?php
-                                
+
                                 $desired_sizes = ['Extra small', 'Small', 'Medium', 'Large'];
 
                                 foreach ($desired_sizes as $size) {
@@ -309,7 +311,7 @@ $select = mysqli_query($conn, $select_query);
                         </div>
                         <div class="product-display">
                             <?php while ($row = mysqli_fetch_assoc($select)) {
-                                
+
                                 $rental_details = null;
                                 if ($row['status'] == 1) {
                                     $rental_query = "SELECT date_rented, duedate FROM rent WHERE gownname_rented = ?";
@@ -342,9 +344,9 @@ $select = mysqli_query($conn, $select_query);
                                             <?php
                                             $images = @unserialize($row['img']);
                                             if ($images === false && $row['img'] !== 'b:0;') {
-                                                $images = [$row['img']]; 
+                                                $images = [$row['img']];
                                             }
-                                            
+
                                             if (!empty($images)) {
                                                 $image = $images[0];
                                                 echo '<img src="uploaded_img/' . htmlspecialchars($image) . '" alt="" style="width: 200px; height: 250px;">';
@@ -371,22 +373,68 @@ $select = mysqli_query($conn, $select_query);
     </div>
 
     <script>
-        
+        // Replace your existing history handling code with this:
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('selectedTags')) {
-                
+
                 const url = new URL(window.location.href);
-                url.searchParams.delete('selectedTags'); 
-                history.replaceState(null, '', url); 
-                document.getElementById('selectedTags').value = ''; 
-                selectedTags = []; 
+                url.searchParams.delete('selectedTags');
+                history.replaceState(null, '', url);
+                document.getElementById('selectedTags').value = '';
+                selectedTags = [];
             }
 
             document.querySelectorAll('.filter-box').forEach(function(box) {
-                box.setAttribute('data-state', 'blank'); 
-                box.textContent = ''; 
-                box.style.color = ''; 
+                box.setAttribute('data-state', 'blank');
+                box.textContent = '';
+                box.style.color = '';
             });
         };
 
@@ -510,16 +558,16 @@ $select = mysqli_query($conn, $select_query);
             const params = new URLSearchParams();
             params.append('search', searchInput);
 
-            
+
             window.location.href = '?' + params.toString();
         }
 
         function clearFilters() {
-            
+
             window.location.reload();
         }
 
-        
+
         document.addEventListener('click', function(event) {
             const searchBar = document.getElementById('search-barA');
             const dropdown = document.getElementById('myDropdown');

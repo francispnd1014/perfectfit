@@ -1,6 +1,8 @@
 <?php
 session_start();
-
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
@@ -20,7 +22,7 @@ try {
         throw new Exception("Connection failed: " . $conn->connect_error);
     }
 
-    
+
     $email = $_SESSION['email'];
     $stmt = $conn->prepare("SELECT fname, sname, pfp FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
@@ -41,9 +43,8 @@ try {
 
     $gowns_query = "SELECT *, img FROM product WHERE status != 1 ORDER BY RAND() LIMIT 12";
     $gowns_result = $conn->query($gowns_query);
-
 } catch (Exception $e) {
-    
+
     error_log($e->getMessage());
     header("Location: error.php");
     exit();
@@ -93,12 +94,12 @@ try {
             <div class="slideshow-container">
                 <div class="titleheader overlay">
                     <div style="display: flex; position: relative; justify-content: center; align-items: center; width: 100%;">
-                    <img class="arrowright" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-1.svg" alt="Arrow 1">
-                    <div style="position: relative; display: flex; justify-content: center; align-items: center;">
+                        <img class="arrowright" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-1.svg" alt="Arrow 1">
+                        <div style="position: relative; display: flex; justify-content: center; align-items: center;">
                             <span class="perfectfit">PERFECT FIT</span>
                         </div>
                         <img class="arrowleft" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-2.svg" alt="Arrow 2">
-                        </div>
+                    </div>
                     <h1 class="gown">RICH SABINIAN</h1>
                     <p class="intro">PerfectFit: Gown Rental believes every occasion deserves a showstopping outfit. Explore our stunning collection of gowns and find the perfect style to express your unique personality and make your special event unforgettable.</p>
                 </div>
@@ -131,7 +132,7 @@ try {
             <?php
             if ($gowns_result->num_rows > 0) {
                 while ($gown = $gowns_result->fetch_assoc()) {
-                    
+
                     $rental_details = null;
                     if ($gown['status'] == 1) {
                         $rental_query = "SELECT date_rented, duedate FROM rent WHERE gownname_rented = ?";
@@ -164,7 +165,7 @@ try {
                                 <?php
                                 $images = @unserialize($gown['img']);
                                 if ($images === false && $gown['img'] !== 'b:0;') {
-                                    $images = [$gown['img']]; 
+                                    $images = [$gown['img']];
                                 }
                                 if (!empty($images)) {
                                     $image = $images[0];
@@ -203,15 +204,62 @@ try {
                 <h3>LOCATION</h3>
                 <p><a href="https:
             </div>
-            <div class="col">
-                <h3>CONTACT US</h3>
-                <p><i class="fa-solid fa-phone-volume"></i> 0916 460 5072</p>
-                <p><a href="https:
-                <p><i class="fa-solid fa-envelope"></i> richsabinianpampang@gmail.com</p>
+            <div class=" col">
+                        <h3>CONTACT US</h3>
+                        <p><i class="fa-solid fa-phone-volume"></i> 0916 460 5072</p>
+                        <p><a href="https:
+                <p><i class=" fa-solid fa-envelope"></i> richsabinianpampang@gmail.com</p>
             </div>
         </div>
     </div>
     <script>
+        // Replace your existing history handling code with this:
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
         let slideIndex = 1;
         showSlides(slideIndex);
 
@@ -246,7 +294,7 @@ try {
             dots[slideIndex - 1].className += " active-dot";
         }
 
-        
+
         setInterval(() => {
             plusSlides(1);
         }, 5000);

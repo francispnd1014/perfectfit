@@ -5,6 +5,9 @@ session_start();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     unset($_SESSION['result']);
 }
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 // Ensure user is logged in
 if (!isset($_SESSION['email'])) {
@@ -47,7 +50,8 @@ try {
     exit();
 }
 
-function getCenterColor($imagePath) {
+function getCenterColor($imagePath)
+{
     // Attempt to get image dimensions from EXIF if available
     $exifData = exif_read_data($imagePath);
     if ($exifData && isset($exifData['COMPUTED']['Width']) && isset($exifData['COMPUTED']['Height'])) {
@@ -131,7 +135,8 @@ function getCenterColor($imagePath) {
 }
 
 // Improved skin tone analysis
-function analyzeSkinTone($avgR, $avgG, $avgB) {
+function analyzeSkinTone($avgR, $avgG, $avgB)
+{
     $brightness = ($avgR + $avgG + $avgB) / 3;
 
     // Adjusting for more accurate thresholds
@@ -181,13 +186,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Home</title>
+    <title>Color Analysis</title>
     <link rel="icon" type="image/x-icon" href="../IMAGES/FAV.png">
     <link rel="stylesheet" href="../CSS/Analysis.css">
     <script src="https://kit.fontawesome.com/a4c2475e10.js"></script>
 </head>
+
 <body>
     <div class="banner">
         <div class="navbar">
@@ -234,5 +241,72 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['skin_image'])) {
             ?>
         </div>
     </div>
+    <script>
+        // Replace your existing history handling code with this:
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
+
+        function toggleDropdown() {
+            var dropdown = document.getElementById("myDropdown");
+            dropdown.classList.toggle("show");
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+    </script>
 </body>
+
 </html>

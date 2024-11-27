@@ -1,6 +1,10 @@
 <?php
 session_start();
 
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
     exit();
@@ -27,16 +31,22 @@ if (isset($_POST['add_product'])) {
     } else {
         $color_to_use = !empty($new_color) ? $new_color : $product_color;
         $image_paths = [];
+        $allowed_types = ['image/png', 'image/jpeg', 'image/jpg'];
 
         for ($i = 0; $i < count($product_images['name']); $i++) {
             $product_image = $product_images['name'][$i];
             $product_image_tmp_name = $product_images['tmp_name'][$i];
+            $product_image_type = $product_images['type'][$i];
             $product_image_folder = 'uploaded_img/' . $product_image;
 
-            if (move_uploaded_file($product_image_tmp_name, $product_image_folder)) {
-                $image_paths[] = $product_image;
+            if (in_array($product_image_type, $allowed_types)) {
+                if (move_uploaded_file($product_image_tmp_name, $product_image_folder)) {
+                    $image_paths[] = $product_image;
+                } else {
+                    $message[] = 'Could not upload image: ' . $product_image;
+                }
             } else {
-                $message[] = 'Could not upload image: ' . $product_image;
+                $message[] = 'Invalid file type: ' . $product_image;
             }
         }
 
@@ -61,7 +71,6 @@ if (isset($_GET['delete'])) {
     header('Location: ' . $_SERVER['PHP_SELF']);
     exit();
 }
-
 
 $color_query = "SELECT DISTINCT color FROM product";
 $color_result = mysqli_query($conn, $color_query);
@@ -106,17 +115,17 @@ $select = mysqli_query($conn, "SELECT * FROM product");
             <div class="modal-content">
                 <div class="container">
                     <div class="admin-product-form-container">
-                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" enctype="multipart/form-data">
+                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
                             <h3>Add Product</h3>
-                            <input type="text" placeholder="Product name" name="product_name" class="box">
-                            <input type="text" placeholder="Product rent" name="product_rent" class="box">
+                            <input type="text" placeholder="Name" name="product_name" class="box" required>
+                            <input type="text" placeholder="Price" name="product_rent" class="box" required>
                             <div class="option">
                                 <button type="button" class="btn-option" onclick="showSelectColor()">Select Color</button>
                                 <button type="button" class="btn-option" onclick="showNewColor()">Add New Color</button>
                             </div>
                             <div id="select_color_div">
-                                <select name="product_color" class="box1">
-                                    <option value="" disabled selected>Select Product Color</option>
+                                <select name="product_color" class="box1" required>
+                                    <option value="" disabled selected>Select Color</option>
                                     <?php
                                     if (mysqli_num_rows($color_result) > 0) {
                                         while ($row = mysqli_fetch_assoc($color_result)) {
@@ -129,22 +138,23 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                             <div id="new_color_div" style="display: none;">
                                 <input type="text" placeholder="New color" name="new_color" class="box">
                             </div>
-                            <select name="product_theme" class="box1">
-                                <option value="" disabled selected>Select Product Theme</option>
+                            <select name="product_theme" class="box1" required>
+                                <option value="" disabled selected>Select Theme</option>
                                 <option value="Wedding">Wedding</option>
                                 <option value="Prom">Prom</option>
                                 <option value="Formal">Formal</option>
                                 <option value="Debut">Debut</option>
                             </select>
                             <h4>Select Size</h4>
-                            <div class="checkbox-group">
-                            <label class="tones"><input type="checkbox" name="product_size[]" value="Extra Small"> Extra Small</label>
+                            <div class="checkbox-group" id="size-group">
+                                <label class="tones"><input type="checkbox" name="product_size[]" value="Extra Small"> Extra Small</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Small"> Small</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Medium"> Medium</label>
                                 <label class="tones"><input type="checkbox" name="product_size[]" value="Large"> Large</label>
                             </div>
-                            <h4>Select Product Analysis</h4>
-                            <div class="checkbox-group">
+                            <div id="size-error" class="error-message"></div>
+                            <h4>Select Analysis</h4>
+                            <div class="checkbox-group" id="analysis-group">
                                 <label class="tones"><input type="checkbox" name="product_analysis[]" value="Pale"> Pale</label>
                                 <label class="tones"><input type="checkbox" name="product_analysis[]" value="Fair"> Fair</label>
                                 <label class="tones"><input type="checkbox" name="product_analysis[]" value="Medium"> Medium</label>
@@ -152,13 +162,15 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                                 <label class="tones"><input type="checkbox" name="product_analysis[]" value="Naturally Brown"> Naturally Brown</label>
                                 <label class="tones"><input type="checkbox" name="product_analysis[]" value="Dark Brown"> Dark Brown</label>
                             </div>
+                            <div id="analysis-error" class="error-message"></div>
                             <h4>Select Undertone</h4>
-                            <div class="checkbox-group">
+                            <div class="checkbox-group" id="tone-group">
                                 <label class="tones"><input type="checkbox" name="product_tone[]" value="Cool"> Cool</label>
                                 <label class="tones"><input type="checkbox" name="product_tone[]" value="Neutral"> Neutral</label>
                                 <label class="tones"><input type="checkbox" name="product_tone[]" value="Warm"> Warm</label>
                             </div>
-                            <input type="file" accept="image/png, image/jpeg, image/jpg" name="product_images[]" class="box2" multiple>
+                            <div id="tone-error" class="error-message"></div>
+                            <input type="file" accept="image/png, image/jpeg, image/jpg" name="product_images[]" class="box2" multiple required>
                             <input type="submit" class="btn-add" name="add_product" value="Add Product">
                             <button type="button" class="btn-cnl" id="btnCancel">Cancel</button>
                         </form>
@@ -177,9 +189,9 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                             <?php
                             $images = @unserialize($row['img']);
                             if ($images === false && $row['img'] !== 'b:0;') {
-                                $images = [$row['img']]; 
+                                $images = [$row['img']];
                             }
-                            
+
                             if (!empty($images)) {
                                 $image = $images[0];
                                 echo '<img src="uploaded_img/' . $image . '" alt="">';
@@ -206,6 +218,97 @@ $select = mysqli_query($conn, "SELECT * FROM product");
         </div>
     </div>
     <script>
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
+
+        function validateForm() {
+            var sizeGroup = document.getElementById('size-group');
+            var analysisGroup = document.getElementById('analysis-group');
+            var toneGroup = document.getElementById('tone-group');
+
+            var sizeError = document.getElementById('size-error');
+            var analysisError = document.getElementById('analysis-error');
+            var toneError = document.getElementById('tone-error');
+
+            var isValid = true;
+
+            if (!isCheckboxGroupChecked(sizeGroup)) {
+                sizeError.textContent = 'Please select at least one size.';
+                isValid = false;
+            } else {
+                sizeError.textContent = '';
+            }
+
+            if (!isCheckboxGroupChecked(analysisGroup)) {
+                analysisError.textContent = 'Please select at least one analysis.';
+                isValid = false;
+            } else {
+                analysisError.textContent = '';
+            }
+
+            if (!isCheckboxGroupChecked(toneGroup)) {
+                toneError.textContent = 'Please select at least one undertone.';
+                isValid = false;
+            } else {
+                toneError.textContent = '';
+            }
+
+            return isValid;
+        }
+
+        function isCheckboxGroupChecked(group) {
+            var checkboxes = group.getElementsByTagName('input');
+            for (var i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    return true;
+                }
+            }
+            return false;
+        }
         document.addEventListener('DOMContentLoaded', function() {
             var modal = document.getElementById("deleteModal");
             var span = document.getElementsByClassName("close")[0];
@@ -277,26 +380,26 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                 xml.send();
             });
         }
-        
+
         var modal = document.getElementById("myModal");
 
-        
+
         var btn = document.getElementById("btnAddProduct");
 
-        
+
         var cancelBtn = document.getElementById("btnCancel");
 
-        
+
         btn.onclick = function() {
             modal.style.display = "block";
         }
 
-        
+
         cancelBtn.onclick = function() {
             modal.style.display = "none";
         }
 
-        
+
         window.onclick = function(event) {
             if (event.target == modal) {
                 modal.style.display = "none";
@@ -318,3 +421,6 @@ $select = mysqli_query($conn, "SELECT * FROM product");
 </html>
 
 <?php $conn->close(); ?>
+
+a:1:{i:0;s:44:"Beige and White Paper Notes Document (3).png";}
+a:1:{i:0;s:51:"428614616_818932920278959_6940045581275341273_n.jpg";}

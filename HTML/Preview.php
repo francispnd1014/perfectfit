@@ -1,5 +1,8 @@
 <?php
 session_start();
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
@@ -11,7 +14,10 @@ $conn = Database::getInstance()->getConnection();
 
 
 $email = $_SESSION['email'];
-
+$sql = "SELECT contact FROM users WHERE email='$email'";
+$result = $conn->query($sql);
+$user_data = $result->fetch_assoc();
+$contact_number = $user_data['contact'];
 $query = "SELECT fname, sname, pfp FROM users WHERE email='$email'";
 $result = $conn->query($query);
 
@@ -265,7 +271,7 @@ $stmt->close();
 <html lang="en">
 
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="../IMAGES/FAV.png">
@@ -573,8 +579,7 @@ $stmt->close();
                         <input class="int-delivery" type="text" id="address" name="address" required>
 
                         <label for="address">Cellphone Number:</label>
-                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" required maxlength="11" pattern="\d{11}" required>
-
+                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" value="<?php echo htmlspecialchars($contact_number); ?>" required maxlength="11" pattern="\d{11}" required>
                         <label for="service">Service:</label>
                         <select class="int-delivery" id="service" name="service" required onchange="updateServiceFee()">
                             <option value="delivery">Delivery</option>
@@ -611,7 +616,7 @@ $stmt->close();
                         <input class="int-delivery" type="text" id="reservation_address" name="address" required>
 
                         <label for="address">Cellphone Number:</label>
-                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" required>
+                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" value="<?php echo htmlspecialchars($contact_number); ?>" required maxlength="11" pattern="\d{11}" required>
 
                         <label for="reservation_service">Service:</label>
                         <select class="int-delivery" id="reservation_service" name="service" required onchange="updateReservationFee()">
@@ -692,6 +697,53 @@ $stmt->close();
         </div>
 
         <script>
+            // Replace your existing history handling code with this:
+            let currentIndex = 0;
+            let histories = [window.location.href];
+
+            window.onpopstate = function(event) {
+                if (event.state) {
+                    // Navigate based on direction
+                    if (event.state.index < currentIndex) {
+                        // Going back
+                        window.location.href = event.state.url;
+                    } else {
+                        // Going forward
+                        window.location.href = event.state.url;
+                    }
+                    currentIndex = event.state.index;
+                }
+            };
+
+            // Push initial state
+            history.replaceState({
+                index: currentIndex,
+                url: window.location.href
+            }, '', window.location.href);
+
+            // Handle links with proper history tracking
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    // Don't handle external links or # links
+                    if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                        return;
+                    }
+
+                    e.preventDefault();
+                    currentIndex++;
+                    const newUrl = this.href;
+                    histories.push(newUrl);
+
+                    // Push new state
+                    history.pushState({
+                        index: currentIndex,
+                        url: newUrl
+                    }, '', newUrl);
+
+                    // Navigate to new page
+                    window.location.href = newUrl;
+                });
+            });
             document.addEventListener('DOMContentLoaded', function() {
                 var reservationModal = document.getElementById("reservationModal");
                 var reserveBtn = document.querySelector(".reserve-btn");

@@ -28,21 +28,21 @@ if (isset($_POST['submit'])) {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    
+
     $email = mysqli_real_escape_string($conn, $email);
 
-    
+
     $sql = "SELECT * FROM users WHERE email='$email'";
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $user_data = $result->fetch_assoc();
 
-        
+
         if ($user_data['is_verified'] == 1) {
-            
+
             if (password_verify($password, $user_data['password'])) {
-                
+
                 $_SESSION['email'] = $user_data['email'];
                 $_SESSION['fname'] = $user_data['fname'];
                 $user_type = $user_data['type'];
@@ -54,15 +54,15 @@ if (isset($_POST['submit'])) {
                 }
                 exit();
             } else {
-                
+
                 $login_error = "Invalid email or password.";
             }
         } else {
-            
+
             $login_error = "Please verify your email before logging in.";
         }
     } else {
-        
+
         $login_error = "Invalid email or password.";
     }
 }
@@ -74,9 +74,10 @@ if (isset($_POST['submitr'])) {
     $contact = mysqli_real_escape_string($conn, $_POST['contact']);
     $password = mysqli_real_escape_string($conn, $_POST['password1']);
     $cpassword = mysqli_real_escape_string($conn, $_POST['cpassword1']);
+    $gender = mysqli_real_escape_string($conn, $_POST['gender']); // Add this line
     $default_pfp = 'uploaded_img/DEF.jpg';
 
-    
+
     $email_check_query = "SELECT * FROM users WHERE email='$email'";
     $email_check_result = $conn->query($email_check_query);
 
@@ -85,44 +86,41 @@ if (isset($_POST['submitr'])) {
     } elseif ($password !== $cpassword) {
         $register_error = "Passwords do not match!";
     } else {
-        
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        
         $verification_code = rand(100000, 999999);
         $hashed_verification_code = password_hash($verification_code, PASSWORD_DEFAULT);
-        $expiry_time = date('Y-m-d H:i:s', strtotime('+24 hours')); 
+        $expiry_time = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
-        
-        $insert_query = "INSERT INTO users (fname, sname, email, contact, password, pfp, verification_code, is_verified, verification_expiry) 
-        VALUES ('$fname', '$sname', '$email', '$contact', '$hashed_password', '$default_pfp', '$hashed_verification_code', 0, '$expiry_time')";
+        // Update the INSERT query to include gender
+        $insert_query = "INSERT INTO users (fname, sname, email, contact, password, pfp, verification_code, is_verified, verification_expiry, gender) 
+        VALUES ('$fname', '$sname', '$email', '$contact', '$hashed_password', '$default_pfp', '$hashed_verification_code', 0, '$expiry_time', '$gender')";
 
         if ($conn->query($insert_query) === TRUE) {
-            
+
             $mail = new PHPMailer(true);
 
             try {
-                
+
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
-                $mail->Username = 'richsabinianpampang@gmail.com'; 
-                $mail->Password = 'nqryqhxsnksaxmvv'; 
+                $mail->Username = 'richsabinianpampang@gmail.com';
+                $mail->Password = 'nqryqhxsnksaxmvv';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port = 587;
 
-                
+
                 $mail->setFrom('your-email@gmail.com', 'PerfectFit');
                 $mail->addAddress($email);
 
-                
+
                 $mail->isHTML(true);
                 $mail->Subject = 'Verify your email address';
                 $mail->Body = "Your verification code is: <strong>" . $verification_code . "</strong>";
 
                 $mail->send();
                 $register_success = "Successfully registered! Please check your email to verify your account.";
-                $_SESSION['email'] = $email; 
+                $_SESSION['email'] = $email;
             } catch (Exception $e) {
                 $register_error = "Verification email could not be sent. Mailer Error: {$mail->ErrorInfo}";
             }
@@ -136,25 +134,25 @@ if (isset($_POST['forgot_submit'])) {
     $forgot_email = $_POST['forgot_email'];
     $forgot_email = mysqli_real_escape_string($conn, $forgot_email);
 
-    
+
     $sql = "SELECT * FROM users WHERE email='$forgot_email' AND reset_token IS NULL";
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $user_data = $result->fetch_assoc();
-        $token = bin2hex(random_bytes(50)); 
-        $hashed_token = password_hash($token, PASSWORD_DEFAULT); 
+        $token = bin2hex(random_bytes(50));
+        $hashed_token = password_hash($token, PASSWORD_DEFAULT);
 
-        
-        $expiry_time = date('Y-m-d H:i:s', strtotime('+1 hour')); 
+
+        $expiry_time = date('Y-m-d H:i:s', strtotime('+1 hour'));
         $sql = "UPDATE users SET reset_token='$hashed_token', token_expiry='$expiry_time' WHERE email='$forgot_email'";
         $conn->query($sql);
 
-        
+
         $mail = new PHPMailer(true);
 
         try {
-            
+
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
@@ -163,11 +161,11 @@ if (isset($_POST['forgot_submit'])) {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
-            
+
             $mail->setFrom('your-email@gmail.com', 'PerfectFit');
             $mail->addAddress($forgot_email);
 
-            
+
             $mail->isHTML(true);
             $mail->Subject = 'Password Reset Request';
             $mail->Body = "Click the link to reset your password: <a href='http://app-perfectfit.com/HTML/Forgot.php?token=$token'>Reset Password</a>";
@@ -175,11 +173,11 @@ if (isset($_POST['forgot_submit'])) {
             $mail->send();
             $reset_success = "If an account exists with this email, a password reset link will be sent.";
         } catch (Exception $e) {
-            
+
             echo "<div class='error-message'>An error occurred. Please try again later.</div>";
         }
     } else {
-        
+
         $reset_success = "If an account exists with this email, a password reset link will be sent.";
     }
 }
@@ -187,7 +185,7 @@ if (isset($_POST['forgot_submit'])) {
 if (isset($_GET['token'])) {
     $token = $_GET['token'];
 
-    
+
     $sql = "SELECT email FROM users WHERE reset_token='$token'";
     $result = $conn->query($sql);
     $email = $result->fetch_assoc()['email'];
@@ -197,13 +195,13 @@ if (isset($_GET['token'])) {
             $newPassword = $_POST['new_password'];
             $hashed_password = password_hash($newPassword, PASSWORD_DEFAULT);
 
-            
+
             $sql = "UPDATE users SET password='$hashed_password', reset_token=NULL WHERE email='$email'";
             $conn->query($sql);
 
             echo "Password has been reset.";
         } else {
-            
+
             echo '
             <form method="POST">
                 <label for="new_password">New Password</label>
@@ -252,7 +250,7 @@ $conn->close();
 <html lang="en">
 
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="../CSS/LoginSignup.css">
@@ -271,15 +269,24 @@ $conn->close();
                 <input type="text" name="sname" class="input-field" placeholder="Surname" required>
                 <input type="email" name="email" class="input-field" placeholder="Email" required>
                 <input type="text" name="contact" class="input-field" placeholder="Contact" required maxlength="11" pattern="\d{11}" title="Cellphone">
+                <div class="gender-container">
+                    <div class="radio-group">
+                        <input type="radio" id="male" name="gender" value="male" required>
+                        <label for="male">Male</label>
+                        <input type="radio" id="female" name="gender" value="female" required>
+                        <label for="female">Female</label>
+                    </div>
+                </div>
                 <div class="input-field-container">
-                    <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required autocomplete="new-password">
+                    <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required minlength="8" autocomplete="new-password">
                     <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
                 </div>
                 <div class="input-field-container">
-                    <input type="password" name="cpassword1" id="cpassword1" class="input-field" placeholder="Confirm Password" onkeyup="checkPasswordMatch()" required autocomplete="new-password">
+                    <input type="password" name="cpassword1" id="cpassword1" class="input-field" placeholder="Confirm Password" onkeyup="checkPasswordMatch()" required minlength="8" autocomplete="new-password">
                     <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('cpassword1')"></i>
                 </div>
                 <div class="password-warning" id="password-warning">Passwords do not match!</div>
+                <div class="password-length-warning" id="password-length-warning">Password must be at least 8 characters long!</div>
                 <?php if (!empty($register_error)) : ?>
                     <div class="warning-message"><?php echo $register_error; ?></div>
                 <?php elseif (!empty($register_success)) : ?>
@@ -390,6 +397,15 @@ $conn->close();
         function validatePassword() {
             var password = document.getElementById("password1").value;
             var confirmPassword = document.getElementById("cpassword1").value;
+            var passwordLengthWarning = document.getElementById("password-length-warning");
+
+            if (password.length < 8) {
+                passwordLengthWarning.style.display = "block";
+                return false;
+            } else {
+                passwordLengthWarning.style.display = "none";
+            }
+
             if (password !== confirmPassword) {
                 alert("Passwords do not match!");
                 return false;

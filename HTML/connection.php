@@ -6,7 +6,7 @@ class Database {
     
     private $servername = "localhost";
     private $username = "root";
-    private $password = "g8gbV0noL$3&fA6x-GAMER";
+    private $password = "g8gbV0noL$3&fA6x-GAMER"; // Update this with the correct password
     private $dbname = "perfectfit";
 
     private function __construct() {

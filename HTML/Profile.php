@@ -1,5 +1,8 @@
 <?php
 session_start();
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
@@ -22,7 +25,7 @@ if ($result->num_rows > 0) {
     $_SESSION['profile_picture'] = $profile_picture;
     $contact = $row['contact'];
     $pfp = $row['pfp'];
-    $currentPassword = $row['password']; 
+    $currentPassword = $row['password'];
 } else {
     header("Location: Login.php");
     exit();
@@ -39,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $newSname = $_POST['sname'];
         $newContact = $_POST['contact'];
 
-        
+
         $update_details_query = "UPDATE users SET fname='$newFname', sname='$newSname', contact='$newContact' WHERE email='$email'";
 
         if ($conn->query($update_details_query) === TRUE) {
@@ -51,47 +54,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['errorMessage'] = "Error updating profile details: " . $conn->error;
         }
 
-        
+
         if (!empty($_FILES['profile-pic']['name'])) {
-            
+
             $file_name = basename($_FILES["profile-pic"]["name"]);
-            $file_name = preg_replace("/[^a-zA-Z0-9.]/", "_", $file_name); 
+            $file_name = preg_replace("/[^a-zA-Z0-9.]/", "_", $file_name);
             $target_file = $target_dir . $file_name;
 
-            
+
             $safe_file_name = $conn->real_escape_string($file_name);
 
             $uploadOk = 1;
             $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
-            
+
             $check = getimagesize($_FILES["profile-pic"]["tmp_name"]);
             if ($check === false) {
                 $uploadOk = 0;
                 $_SESSION['errorMessage'] = "File is not an image.";
             }
 
-            
+
             if ($_FILES["profile-pic"]["size"] > 5000000) {
                 $uploadOk = 0;
                 $_SESSION['errorMessage'] = "Sorry, your file is too large.";
             }
 
-            
+
             if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif") {
                 $uploadOk = 0;
                 $_SESSION['errorMessage'] = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
             }
 
-            
+
             if ($uploadOk == 1) {
                 if (move_uploaded_file($_FILES["profile-pic"]["tmp_name"], $target_file)) {
-                    
+
                     $update_pfp_query = "UPDATE users SET pfp='$target_file' WHERE email='$email'";
 
                     if ($conn->query($update_pfp_query) === TRUE) {
-                        $pfp = $target_file;  
-                        $_SESSION['pfp'] = $target_file;  
+                        $pfp = $target_file;
+                        $_SESSION['pfp'] = $target_file;
                         $_SESSION['successMessage'] = "Profile picture updated successfully.";
                     } else {
                         $_SESSION['errorMessage'] = "Error updating profile picture path: " . $conn->error;
@@ -108,13 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $newPassword = $_POST['new-password'];
         $repeatNewPassword = $_POST['repeat-new-password'];
 
-        
+
         if (password_verify($currentPasswordInput, $currentPassword)) {
             if ($newPassword === $repeatNewPassword) {
-                
+
                 $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
-                
+
                 $update_password_query = "UPDATE users SET password='$hashedNewPassword' WHERE email='$email'";
                 if ($conn->query($update_password_query) === TRUE) {
                     $_SESSION['successMessage'] = "Password updated successfully.";
@@ -267,6 +270,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <?php endif; ?>
 
     <script>
+        // Replace your existing history handling code with this:
+        let currentIndex = 0;
+        let histories = [window.location.href];
+
+        window.onpopstate = function(event) {
+            if (event.state) {
+                // Navigate based on direction
+                if (event.state.index < currentIndex) {
+                    // Going back
+                    window.location.href = event.state.url;
+                } else {
+                    // Going forward
+                    window.location.href = event.state.url;
+                }
+                currentIndex = event.state.index;
+            }
+        };
+
+        // Push initial state
+        history.replaceState({
+            index: currentIndex,
+            url: window.location.href
+        }, '', window.location.href);
+
+        // Handle links with proper history tracking
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Don't handle external links or # links
+                if (this.hostname !== window.location.hostname || this.getAttribute('href') === '#') {
+                    return;
+                }
+
+                e.preventDefault();
+                currentIndex++;
+                const newUrl = this.href;
+                histories.push(newUrl);
+
+                // Push new state
+                history.pushState({
+                    index: currentIndex,
+                    url: newUrl
+                }, '', newUrl);
+
+                // Navigate to new page
+                window.location.href = newUrl;
+            });
+        });
+
         function toggleDropdown() {
             document.getElementById("myDropdown").classList.toggle("show");
         }
@@ -276,17 +327,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             var x = document.getElementsByClassName("tab-content");
             var tabs = document.getElementsByClassName("list-group-item");
 
-            
+
             for (i = 0; i < x.length; i++) {
                 x[i].classList.remove("active");
             }
 
-            
+
             for (i = 0; i < tabs.length; i++) {
                 tabs[i].classList.remove("active");
             }
 
-            
+
             document.getElementById(tabName).classList.add("active");
             event.currentTarget.classList.add("active");
         }
@@ -313,7 +364,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         function confirmAction() {
             document.getElementById('popup').style.display = 'none';
             if (formToSubmit) {
-                
+
                 if (formToSubmit.id === 'edit-details-form') {
                     const hiddenInput = document.createElement('input');
                     hiddenInput.type = 'hidden';
@@ -335,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             formToSubmit = null;
         }
 
-        
+
         window.onclick = function(event) {
             var popup = document.getElementById('popup');
             if (event.target == popup) {
