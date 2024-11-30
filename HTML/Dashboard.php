@@ -61,8 +61,28 @@ $reservedGownsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE re
 $reservedGownsCount = $reservedGownsResult->fetch_assoc()['count'];
 
 
-$revenueResult = $conn->query("SELECT SUM(total) AS revenue FROM rent WHERE request = 'accepted'");
-$totalRevenue = $revenueResult->fetch_assoc()['revenue'];
+// Get revenue from non-batch orders
+$nonBatchRevenue = $conn->query("
+    SELECT SUM(total) AS revenue 
+    FROM rent 
+    WHERE request = 'returned' 
+    AND batch = 0
+")->fetch_assoc()['revenue'] ?? 0;
+
+// Get revenue from batch orders
+$batchRevenue = $conn->query("
+    SELECT SUM(total) AS revenue 
+    FROM (
+        SELECT MIN(id) as batch_id, email, batch, total
+        FROM rent 
+        WHERE request = 'returned' 
+        AND batch = 1
+        GROUP BY email, batch
+    ) AS batch_groups
+")->fetch_assoc()['revenue'] ?? 0;
+
+// Calculate total revenue
+$totalRevenue = $nonBatchRevenue + $batchRevenue;
 
 $reservedGownsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE reservation = 1");
 $reservedGownsCount = $reservedGownsResult->fetch_assoc()['count'];

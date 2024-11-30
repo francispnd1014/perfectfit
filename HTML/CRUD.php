@@ -118,7 +118,7 @@ $select = mysqli_query($conn, "SELECT * FROM product");
                         <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
                             <h3>Add Product</h3>
                             <input type="text" placeholder="Name" name="product_name" class="box" required>
-                            <input type="text" placeholder="Price" name="product_rent" class="box" required>
+                            <input type="number " placeholder="Price" name="product_rent" class="box" required>
                             <div class="option">
                                 <button type="button" class="btn-option" onclick="showSelectColor()">Select Color</button>
                                 <button type="button" class="btn-option" onclick="showNewColor()">Add New Color</button>
@@ -421,6 +421,3 @@ $select = mysqli_query($conn, "SELECT * FROM product");
 </html>
 
 <?php $conn->close(); ?>
-
-a:1:{i:0;s:44:"Beige and White Paper Notes Document (3).png";}
-a:1:{i:0;s:51:"428614616_818932920278959_6940045581275341273_n.jpg";}

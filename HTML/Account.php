@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order'])) {
     $id = $conn->real_escape_string($_POST['id']);
     $email = $_SESSION['email'];
 
-    $query = "DELETE FROM rent WHERE id='$id' AND email='$email'";
+    $query = "UPDATE rent SET request='cancelled' WHERE id='$id' AND email='$email'";
 
     if ($conn->query($query) === TRUE) {
         echo json_encode(['status' => 'success', 'message' => 'Order cancelled successfully']);
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_declined'])) {
     $id = $conn->real_escape_string($_POST['id']);
     $email = $_SESSION['email'];
 
-    $query = "DELETE FROM rent WHERE id='$id' AND email='$email' AND request='declined'";
+    $query = "UPDATE rent SET request='cancelled' WHERE id='$id' AND email='$email'";
 
     if ($conn->query($query) === TRUE) {
         echo json_encode(['status' => 'success', 'message' => 'Declined gown deleted successfully']);
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
-$rent_query = "SELECT id, gownname_rented, request, date_rented, duedate, returned_date, total, address, reason, service FROM rent WHERE email='$email'";
+$rent_query = "SELECT id, gownname_rented, request, date_rented, duedate, returned_date, total, address, reason, service, batch FROM rent WHERE email='$email'";
 $rent_result = $conn->query($rent_query);
 
 $rented_gown_images = [];
@@ -105,6 +105,7 @@ if ($rent_result->num_rows > 0) {
             if ($product_result->num_rows > 0) {
                 while ($product_row = $product_result->fetch_assoc()) {
                     $product_row['request'] = $rent_row['request'];
+                    $product_row['batch'] = $rent_row['batch'];
                     $product_row['service'] = $rent_row['service'];
                     $product_row['date_rented'] = $rent_row['date_rented'];
                     $product_row['duedate'] = $rent_row['duedate'];
@@ -173,15 +174,14 @@ if ($rent_result->num_rows > 0) {
                         <nav>
                             <ul>
                                 <li><a href="#favorite" onclick="showSection('favorite')">Favorite</a></li>
-                                <!-- <li><a href="#renting" onclick="showSection('renting')">Renting</a></li> -->
                                 <li><a href="#pending" onclick="showSection('pending')">Pending</a></li>
-                                <li><a href="#payment" onclick="showSection('payment')">Payment</a></li>
+                                <li><a href="#payment" onclick="showSection('payment')">Accepted</a></li>
                                 <li><a href="#service" onclick="showSection('service')">Service</a></li>
                                 <li><a href="#received" onclick="showSection('received')">Received</a></li>
+                                <li><a href="#cancelled" onclick="showSection('cancelled')">Cancelled</a></li>
                                 <li><a href="#history" onclick="showSection('history')">History</a></li>
                             </ul>
                         </nav>
-
                         <div id="favorite" class="photos active">
                             <?php foreach ($gown_images as $gown): ?>
                                 <a href="Preview.php?id=<?php echo urlencode($gown['id']); ?>" class="card-link">
@@ -233,7 +233,11 @@ if ($rent_result->num_rows > 0) {
                                             <div class="service-type">
                                                 Total: ₱ <?php echo number_format($rented_gown['total'], 2); ?>
                                             </div>
-                                            <button class="cancel-order-btn" data-id="<?php echo htmlspecialchars($rented_gown['rent_id']); ?>">Cancel Order</button>
+                                            <?php if (!$rented_gown['batch']): ?>
+                                                <button class="cancel-order-btn" data-id="<?php echo htmlspecialchars($rented_gown['rent_id']); ?>">Cancel Order</button>
+                                            <?php else: ?>
+                                                <div class="service-type">This is part of a batch order and cannot be cancelled individually</div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 <?php endif; ?>
@@ -256,7 +260,7 @@ if ($rent_result->num_rows > 0) {
                                             ?>
                                         </div>
                                         <div class="overlay payment-pending">
-                                            Payment Pending
+                                            Accepted
                                             <div class="service-type">
                                                 Deliver: <?php echo date('F d, Y', strtotime($rented_gown['date_rented'])); ?>
                                             </div>
@@ -269,13 +273,37 @@ if ($rent_result->num_rows > 0) {
                                             <div class="service-type">
                                                 Total: ₱ <?php echo number_format($rented_gown['total'], 2); ?>
                                             </div>
-                                            <button class="pay-order-btn" onclick="confirmPayment(<?php echo htmlspecialchars($rented_gown['rent_id']); ?>)" data-id="<?php echo htmlspecialchars($rented_gown['rent_id']); ?>">Settle Payment</button>
                                         </div>
                                     </div>
                                 <?php endif; ?>
                             <?php endforeach; ?>
                         </div>
-
+                        <div id="cancelled" class="photos hidden">
+                            <?php foreach ($rented_gown_images as $rented_gown): ?>
+                                <?php if ($rented_gown['request'] == 'cancelled'): ?>
+                                    <div class="image-container">
+                                        <div class="image">
+                                            <?php
+                                            $images = @unserialize($rented_gown['img']);
+                                            if ($images === false && $rented_gown['img'] !== 'b:0;') {
+                                                $images = [$rented_gown['img']];
+                                            }
+                                            if (!empty($images)) {
+                                                $image = $images[0];
+                                                echo '<img class="grid-item" src="uploaded_img/' . htmlspecialchars($image) . '" alt="Cancelled Gown Image" />';
+                                            }
+                                            ?>
+                                        </div>
+                                        <div class="overlay cancelled">
+                                            Order Cancelled
+                                            <div class="service-type">
+                                                Reason: <?php echo htmlspecialchars($rented_gown['reason']); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
                         <div id="received" class="photos hidden">
                             <?php foreach ($rented_gown_images as $rented_gown): ?>
                                 <?php if ($rented_gown['request'] == 'received'): ?>
@@ -329,7 +357,7 @@ if ($rent_result->num_rows > 0) {
                                             ?>
                                         </div>
                                         <div class="overlay accepted">
-                                            Request Accepted
+                                            Deliver/Pickup
                                             <div class="service-type">
                                                 Service: <?php echo htmlspecialchars(ucfirst($rented_gown['service'])); ?>
                                             </div>
@@ -494,8 +522,8 @@ if ($rent_result->num_rows > 0) {
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <span class="payment-close">&times;</span>
-            <h3>Payment Confirmation</h3>
-            <p>Are you sure you want to confirm this payment?</p>
+            <h3>Accept Confirmation</h3>
+            <p>Do you want to continue?</p>
             <div class="modal-buttons">
                 <button id="confirmPaymentYes" class="modal-btn">Yes</button>
                 <button id="confirmPaymentNo" class="modal-btn">No</button>
@@ -799,6 +827,11 @@ if ($rent_result->num_rows > 0) {
 
             document.querySelectorAll('.cancel-order-btn').forEach(button => {
                 button.addEventListener('click', function() {
+                    const isBatch = this.closest('.image-container').querySelector('.batch-notice') !== null;
+                    if (isBatch) {
+                        alert('Batch orders cannot be cancelled individually');
+                        return;
+                    }
                     selectedOrderId = this.getAttribute('data-id');
                     document.getElementById('confirmationModal').style.display = 'block';
                 });

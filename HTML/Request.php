@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         $conn->begin_transaction();
         try {
-            if ($status === 'declined') {
+            if ($status === 'cancelled') {
                 $sql = "UPDATE rent SET request = ?, reason = ? WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("ssi", $status, $reason, $id);
@@ -167,10 +167,10 @@ $result_reservations = $conn->query($sql_reservations);
                     <i class="fas fa-calendar-check"></i> Reservation
                 </button>
                 <button class="tab-btn" data-tab="payment">
-                    <i class="fas fa-money-bill-wave"></i> Payment
+                    <i class="fas fa-money-bill-wave"></i> Accepted
                 </button>
                 <button class="tab-btn" data-tab="accepted">
-                    <i class="fas fa-check-circle"></i> Accepted
+                    <i class="fas fa-check-circle"></i> Service
                 </button>
                 <button class="tab-btn" data-tab="received">
                     <i class="fas fa-box-check"></i> Received
@@ -181,79 +181,151 @@ $result_reservations = $conn->query($sql_reservations);
             </div>
 
             <div class="request-list">
-                <div class="tab-content active" id="pending-tab">
-                    <?php
-                    $currentGownName = null;
-                    while ($row = $result_pending->fetch_assoc()):
-                        if ($currentGownName !== $row['gown_name']) {
-                            if ($currentGownName !== null) {
-                                echo '</div>';
+            <div class="tab-content active" id="pending-tab">
+    <?php
+    $currentEmail = null;
+    $batchGroups = array();
+    
+    while ($row = $result_pending->fetch_assoc()) {
+        $key = $row['email'] . '-' . $row['batch'];
+        if (!isset($batchGroups[$key])) {
+            $batchGroups[$key] = array();
+        }
+        $batchGroups[$key][] = $row;
+    }
+
+    foreach ($batchGroups as $group):
+        $firstRow = $group[0];
+        if ($currentEmail !== $firstRow['email']) {
+            if ($currentEmail !== null) {
+                echo '</div>';
+            }
+            $currentEmail = $firstRow['email'];
+            echo '<div class="gown-group">';
+            echo '<h2>' . htmlspecialchars($currentEmail) . '</h2>';
+        }
+        
+        if ($firstRow['batch']):
+            echo '<div class="batch-group">';
+            echo '<h3>Batch Order (' . htmlspecialchars($firstRow['email']) . ')</h3>';            
+            foreach ($group as $row):
+    ?>
+                <div class="request-card">
+                    <div class="request-header">
+                        <div class="order-id">Order #<?php echo $row['id']; ?></div>
+                        <div class="status-badge status-<?php echo strtolower($row['request']); ?>">
+                            <?php echo ucfirst($row['request']); ?>
+                        </div>
+                    </div>
+                    <div class="request-body">
+                        <div class="product-image">
+                            <?php
+                            $images = @unserialize($row['img']);
+                            if ($images === false) {
+                                $images = [$row['img']];
                             }
-                            $currentGownName = $row['gown_name'];
-                            echo '<div class="gown-group">';
-                            echo '<h2>' . htmlspecialchars($currentGownName) . '</h2>';
-                        }
-                    ?>
-                        <div class="request-card">
-                            <div class="request-header">
-                                <div class="order-id">Order #<?php echo $row['id']; ?></div>
-                                <div class="status-badge status-<?php echo strtolower($row['request']); ?>">
-                                    <?php echo ucfirst($row['request']); ?>
+                            if (!empty($images)) {
+                                echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                            }
+                            ?>
+                        </div>
+                        <div class="request-details">
+                            <div class="customer-section">
+                                <h3><i class="fas fa-user"></i> Customer Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
+                                    <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
+                                    <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                    <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                 </div>
                             </div>
-
-                            <div class="request-body">
-                                <div class="product-image">
-                                    <?php
-                                    $images = @unserialize($row['img']);
-                                    if ($images === false) {
-                                        $images = [$row['img']];
-                                    }
-                                    if (!empty($images)) {
-                                        echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
-                                    }
-                                    ?>
-                                </div>
-
-                                <div class="request-details">
-                                    <div class="customer-section">
-                                        <h3><i class="fas fa-user"></i> Customer Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
-                                            <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
-                                            <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
-                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="order-section">
-                                        <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
-                                            <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
-                                            <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
-                                            <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
-                                            <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="action-buttons">
-                                        <button class="accept-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'payment')">
-                                            <i class="fas fa-check"></i> Accept Order
-                                        </button>
-                                        <button class="decline-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'declined')">
-                                            <i class="fas fa-times"></i> Decline Order
-                                        </button>
-                                    </div>
+                            <div class="order-section">
+                                <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
+                                    <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
+                                    <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
+                                    <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
+                                    <p class="total-price">
+                                        <strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?>
+                                        <?php echo ($row['batch'] == true) ? ' (Batch)' : ''; ?>
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                    <?php
-                    endwhile;
-                    if ($currentGownName !== null) {
-                        echo '</div>';
-                    }
-                    ?>
+                    </div>
                 </div>
+            <?php endforeach; ?>
+            
+            <div class="batch-action-buttons">
+                <button class="accept-btn" onclick="updateStatus([<?php echo implode(',', array_map(function($r) { return $r['id']; }, $group)); ?>], 'payment')">
+                    <i class="fas fa-check"></i> Accept Batch Order
+                </button>
+                <button class="decline-btn" onclick="updateStatus([<?php echo implode(',', array_map(function($r) { return $r['id']; }, $group)); ?>], 'cancelled')">
+                    <i class="fas fa-times"></i> Decline Batch Order
+                </button>
+            </div>
+            </div>
+        <?php else: ?>
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="order-id">Order #<?php echo $firstRow['id']; ?></div>
+                    <div class="status-badge status-<?php echo strtolower($firstRow['request']); ?>">
+                        <?php echo ucfirst($firstRow['request']); ?>
+                    </div>
+                </div>
+                <div class="request-body">
+                    <div class="product-image">
+                        <?php
+                        $images = @unserialize($firstRow['img']);
+                        if ($images === false) {
+                            $images = [$firstRow['img']];
+                        }
+                        if (!empty($images)) {
+                            echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                        }
+                        ?>
+                    </div>
+                    <div class="request-details">
+                        <div class="customer-section">
+                            <h3><i class="fas fa-user"></i> Customer Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Name:</strong> <?php echo htmlspecialchars($firstRow['fname'] . ' ' . $firstRow['sname']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($firstRow['email']); ?></p>
+                                <p><strong>Address:</strong> <?php echo htmlspecialchars($firstRow['address']); ?></p>
+                                <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($firstRow['cellnumber']); ?></p>
+                            </div>
+                        </div>
+                        <div class="order-section">
+                            <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Gown:</strong> <?php echo htmlspecialchars($firstRow['gown_name']); ?></p>
+                                <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($firstRow['service'])); ?></p>
+                                <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['date_rented'])); ?></p>
+                                <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['duedate'])); ?></p>
+                                <p class="total-price">
+                                    <strong>Total:</strong> ₱<?php echo number_format($firstRow['total'], 2); ?>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="accept-btn" onclick="updateStatus(<?php echo $firstRow['id']; ?>, 'payment')">
+                                <i class="fas fa-check"></i> Accept Order
+                            </button>
+                            <button class="decline-btn" onclick="updateStatus(<?php echo $firstRow['id']; ?>, 'cancelled')">
+                                <i class="fas fa-times"></i> Decline Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif;
+    endforeach;
+    if ($currentEmail !== null) {
+        echo '</div>';
+    }
+    ?>
+</div>
 
                 <div class="tab-content" id="reservations-tab">
                     <?php
@@ -298,7 +370,10 @@ $result_reservations = $conn->query($sql_reservations);
                                             <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
                                             <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
                                             <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
-                                            <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
+                                            <p class="total-price">
+                                                <strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?>
+                                                <?php echo ($row['batch'] == true) ? ' (Batch)' : ''; ?>
+                                            </p>
                                         </div>
                                     </div>
                                     <div class="action-buttons">
@@ -315,275 +390,577 @@ $result_reservations = $conn->query($sql_reservations);
                 </div>
             </div>
 
-            <div class="tab-content" id="payment-tab">
-                <?php
-                $currentGownName = null;
-                $result_all->data_seek(0);
-                while ($row = $result_all->fetch_assoc()):
-                    if ($row['request'] == 'payment'):
-                        if ($currentGownName !== $row['gown_name']) {
-                            if ($currentGownName !== null) {
-                                echo '</div>';
+<div class="tab-content" id="payment-tab">
+    <?php
+    $currentEmail = null;
+    $batchGroups = array();
+    
+    $result_all->data_seek(0);
+    while ($row = $result_all->fetch_assoc()) {
+        if ($row['request'] == 'payment') {
+            $key = $row['email'] . '-' . $row['batch'];
+            if (!isset($batchGroups[$key])) {
+                $batchGroups[$key] = array();
+            }
+            $batchGroups[$key][] = $row;
+        }
+    }
+
+    foreach ($batchGroups as $group):
+        $firstRow = $group[0];
+        if ($currentEmail !== $firstRow['email']) {
+            if ($currentEmail !== null) {
+                echo '</div>';
+            }
+            $currentEmail = $firstRow['email'];
+            echo '<div class="gown-group">';
+            echo '<h2>' . htmlspecialchars($currentEmail) . '</h2>';
+        }
+        
+        if ($firstRow['batch']):
+            echo '<div class="batch-group">';
+            echo '<h3>Batch Order for ' . htmlspecialchars($firstRow['email']) . '</h3>';
+            foreach ($group as $row):
+    ?>
+                <div class="request-card">
+                    <div class="request-header">
+                        <div class="order-id">Order #<?php echo $row['id']; ?></div>
+                        <div class="status-badge status-payment">
+                            <p>Accepted</p>
+                        </div>
+                    </div>
+                    <div class="request-body">
+                        <div class="product-image">
+                            <?php
+                            $images = @unserialize($row['img']);
+                            if ($images === false) {
+                                $images = [$row['img']];
                             }
-                            $currentGownName = $row['gown_name'];
-                            echo '<div class="gown-group">';
-                            echo '<h2>' . htmlspecialchars($currentGownName) . '</h2>';
-                        }
-                ?>
-                        <div class="request-card">
-                            <div class="request-header">
-                                <div class="order-id">Order #<?php echo $row['id']; ?></div>
-                                <div class="status-badge status-payment">
-                                    <?php echo ucfirst($row['request']); ?>
-                                </div>
-                            </div>
-
-                            <div class="request-body">
-                                <div class="product-image">
-                                    <?php
-                                    $images = @unserialize($row['img']);
-                                    if ($images === false) {
-                                        $images = [$row['img']];
-                                    }
-                                    if (!empty($images)) {
-                                        echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
-                                    }
-                                    ?>
-                                </div>
-
-                                <div class="request-details">
-                                    <div class="customer-section">
-                                        <h3><i class="fas fa-user"></i> Customer Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
-                                            <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
-                                            <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
-                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="order-section">
-                                        <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
-                                            <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
-                                            <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
-                                            <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
-                                            <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="action-buttons">
-                                        <button class="accept-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'accepted')">
-                                            <i class="fas fa-check"></i> Confirm Payment
-                                        </button>
-                                        <button class="decline-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'declined')">
-                                            <i class="fas fa-times"></i> Decline Payment
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                <?php
-                    endif;
-                endwhile;
-                if ($currentGownName !== null) {
-                    echo '</div>';
-                }
-                ?>
-            </div>
-
-            <div class="tab-content" id="accepted-tab">
-                <?php
-                $currentGownName = null;
-                $result_all->data_seek(0);
-                while ($row = $result_all->fetch_assoc()):
-                    if ($row['request'] == 'accepted' && !$row['reservation']):
-                        if ($currentGownName !== $row['gown_name']) {
-                            if ($currentGownName !== null) {
-                                echo '</div>';
+                            if (!empty($images)) {
+                                echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
                             }
-                            $currentGownName = $row['gown_name'];
-                            echo '<div class="gown-group">';
-                            echo '<h2>' . htmlspecialchars($currentGownName) . '</h2>';
+                            ?>
+                        </div>
+                        <div class="request-details">
+                            <div class="customer-section">
+                                <h3><i class="fas fa-user"></i> Customer Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
+                                    <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
+                                    <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                    <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
+                                </div>
+                            </div>
+                            <div class="order-section">
+                                <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
+                                    <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
+                                    <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
+                                    <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
+                                    <p class="total-price">
+                                        <strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?>
+                                        <?php echo ($row['batch'] == true) ? ' (Batch)' : ''; ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            
+            <div class="batch-action-buttons">
+                <button class="accept-btn" onclick="updateStatus([<?php echo implode(',', array_map(function($r) { return $r['id']; }, $group)); ?>], 'accepted')">
+                    <i class="fas fa-check"></i> Confirm Batch
+                </button>
+                <button class="decline-btn" onclick="updateStatus([<?php echo implode(',', array_map(function($r) { return $r['id']; }, $group)); ?>], 'cancelled')">
+                    <i class="fas fa-times"></i> Decline Batch
+                </button>
+            </div>
+            </div>
+        <?php else: ?>
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="order-id">Order #<?php echo $firstRow['id']; ?></div>
+                    <div class="status-badge status-payment">
+                        <p>Accepted</p>
+                    </div>
+                </div>
+                <div class="request-body">
+                    <div class="product-image">
+                        <?php
+                        $images = @unserialize($firstRow['img']);
+                        if ($images === false) {
+                            $images = [$firstRow['img']];
                         }
-                ?>
-                        <div class="request-card">
-                            <div class="request-header">
-                                <div class="order-id">Order #<?php echo $row['id']; ?></div>
-                                <div class="status-badge status-<?php echo strtolower($row['request']); ?>">
-                                    <?php echo ucfirst($row['request']); ?>
+                        if (!empty($images)) {
+                            echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                        }
+                        ?>
+                    </div>
+                    <div class="request-details">
+                        <div class="customer-section">
+                            <h3><i class="fas fa-user"></i> Customer Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Name:</strong> <?php echo htmlspecialchars($firstRow['fname'] . ' ' . $firstRow['sname']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($firstRow['email']); ?></p>
+                                <p><strong>Address:</strong> <?php echo htmlspecialchars($firstRow['address']); ?></p>
+                                <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($firstRow['cellnumber']); ?></p>
+                            </div>
+                        </div>
+                        <div class="order-section">
+                            <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Gown:</strong> <?php echo htmlspecialchars($firstRow['gown_name']); ?></p>
+                                <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($firstRow['service'])); ?></p>
+                                <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['date_rented'])); ?></p>
+                                <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['duedate'])); ?></p>
+                                <p class="total-price">
+                                    <strong>Total:</strong> ₱<?php echo number_format($firstRow['total'], 2); ?>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="accept-btn" onclick="updateStatus(<?php echo $firstRow['id']; ?>, 'accepted')">
+                                <i class="fas fa-check"></i> Confirm
+                            </button>
+                            <button class="decline-btn" onclick="updateStatus(<?php echo $firstRow['id']; ?>, 'cancelled')">
+                                <i class="fas fa-times"></i> Decline
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif;
+    endforeach;
+    if ($currentEmail !== null) {
+        echo '</div>';
+    }
+    ?>
+</div>
+
+<div class="tab-content" id="accepted-tab">
+    <?php
+    $currentEmail = null;
+    $batchGroups = array();
+    
+    $result_all->data_seek(0);
+    while ($row = $result_all->fetch_assoc()) {
+        if ($row['request'] == 'accepted' && !$row['reservation']) {
+            $key = $row['email'] . '-' . $row['batch'];
+            if (!isset($batchGroups[$key])) {
+                $batchGroups[$key] = array();
+            }
+            $batchGroups[$key][] = $row;
+        }
+    }
+
+    foreach ($batchGroups as $group):
+        $firstRow = $group[0];
+        if ($currentEmail !== $firstRow['email']) {
+            if ($currentEmail !== null) {
+                echo '</div>';
+            }
+            $currentEmail = $firstRow['email'];
+            echo '<div class="gown-group">';
+            echo '<h2>' . htmlspecialchars($currentEmail) . '</h2>';
+        }
+        
+        if ($firstRow['batch']):
+            echo '<div class="batch-group">';
+            echo '<h3>Batch Order for ' . htmlspecialchars($firstRow['email']) . '</h3>';
+            
+            foreach ($group as $row):
+    ?>
+                <div class="request-card">
+                    <div class="request-header">
+                        <div class="order-id">Order #<?php echo $row['id']; ?></div>
+                        <div class="status-badge status-<?php echo strtolower($row['request']); ?>">
+                            <p>Service</p>
+                        </div>
+                    </div>
+                    <div class="request-body">
+                        <div class="product-image">
+                            <?php
+                            $images = @unserialize($row['img']);
+                            if ($images === false) {
+                                $images = [$row['img']];
+                            }
+                            if (!empty($images)) {
+                                echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                            }
+                            ?>
+                        </div>
+                        <div class="request-details">
+                            <div class="customer-section">
+                                <h3><i class="fas fa-user"></i> Customer Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
+                                    <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
+                                    <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                    <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                 </div>
                             </div>
-
-                            <div class="request-body">
-                                <div class="product-image">
-                                    <?php
-                                    $images = @unserialize($row['img']);
-                                    if ($images === false) {
-                                        $images = [$row['img']];
-                                    }
-                                    if (!empty($images)) {
-                                        echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
-                                    }
-                                    ?>
-                                </div>
-
-                                <div class="request-details">
-                                    <div class="customer-section">
-                                        <h3><i class="fas fa-user"></i> Customer Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
-                                            <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
-                                            <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
-                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="order-section">
-                                        <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
-                                            <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
-                                            <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
-                                            <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
-                                            <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="action-buttons">
-                                        <button class="receive-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'received')">
-                                            <i class="fas fa-box-check"></i> Order Received
-                                        </button>
-                                    </div>
+                            <div class="order-section">
+                                <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
+                                    <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
+                                    <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
+                                    <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
+                                    <p class="total-price">
+                                        <strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?>
+                                        <?php echo ($row['batch'] == true) ? ' (Batch)' : ''; ?>
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                <?php
-                    endif;
-                endwhile;
-                if ($currentGownName !== null) {
-                    echo '</div>';
-                }
-                ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            
+            <div class="batch-action-buttons">
+                <button class="receive-btn" onclick="updateStatus([<?php echo implode(',', array_map(function($r) { return $r['id']; }, $group)); ?>], 'received')">
+                    <i class="fas fa-box-check"></i> Batch Order Received
+                </button>
             </div>
+            </div>
+        <?php else: ?>
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="order-id">Order #<?php echo $firstRow['id']; ?></div>
+                    <div class="status-badge status-<?php echo strtolower($firstRow['request']); ?>">
+                        <p>Service</p>
+                    </div>
+                </div>
+                <div class="request-body">
+                    <div class="product-image">
+                        <?php
+                        $images = @unserialize($firstRow['img']);
+                        if ($images === false) {
+                            $images = [$firstRow['img']];
+                        }
+                        if (!empty($images)) {
+                            echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                        }
+                        ?>
+                    </div>
+                    <div class="request-details">
+                        <div class="customer-section">
+                            <h3><i class="fas fa-user"></i> Customer Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Name:</strong> <?php echo htmlspecialchars($firstRow['fname'] . ' ' . $firstRow['sname']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($firstRow['email']); ?></p>
+                                <p><strong>Address:</strong> <?php echo htmlspecialchars($firstRow['address']); ?></p>
+                                <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($firstRow['cellnumber']); ?></p>
+                            </div>
+                        </div>
+                        <div class="order-section">
+                            <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Gown:</strong> <?php echo htmlspecialchars($firstRow['gown_name']); ?></p>
+                                <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($firstRow['service'])); ?></p>
+                                <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['date_rented'])); ?></p>
+                                <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['duedate'])); ?></p>
+                                <p class="total-price">
+                                    <strong>Total:</strong> ₱<?php echo number_format($firstRow['total'], 2); ?>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="receive-btn" onclick="updateStatus(<?php echo $firstRow['id']; ?>, 'received')">
+                                <i class="fas fa-box-check"></i> Order Received
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif;
+    endforeach;
+    if ($currentEmail !== null) {
+        echo '</div>';
+    }
+    ?>
+</div>
 
-            <div class="tab-content" id="received-tab">
-                <?php
-                $result_all->data_seek(0);
-                while ($row = $result_all->fetch_assoc()):
-                    if ($row['request'] == 'received'):
-                ?>
-                        <div class="request-card">
-                            <div class="request-header">
-                                <div class="order-id">Order #<?php echo $row['id']; ?></div>
-                                <div class="status-badge status-received">
-                                    <?php echo ucfirst($row['request']); ?>
+<div class="tab-content" id="received-tab">
+    <?php
+    $currentEmail = null;
+    $batchGroups = array();
+    
+    $result_all->data_seek(0);
+    while ($row = $result_all->fetch_assoc()) {
+        if ($row['request'] == 'received') {
+            $key = $row['email'] . '-' . $row['batch'];
+            if (!isset($batchGroups[$key])) {
+                $batchGroups[$key] = array();
+            }
+            $batchGroups[$key][] = $row;
+        }
+    }
+
+    foreach ($batchGroups as $group):
+        $firstRow = $group[0];
+        if ($currentEmail !== $firstRow['email']) {
+            if ($currentEmail !== null) {
+                echo '</div>';
+            }
+            $currentEmail = $firstRow['email'];
+            echo '<div class="gown-group">';
+            echo '<h2>' . htmlspecialchars($currentEmail) . '</h2>';
+        }
+        
+        if ($firstRow['batch']):
+            echo '<div class="batch-group">';
+            echo '<h3>Batch Order for ' . htmlspecialchars($firstRow['email']) . '</h3>';
+            
+            foreach ($group as $row):
+    ?>
+                <div class="request-card">
+                    <div class="request-header">
+                        <div class="order-id">Order #<?php echo $row['id']; ?></div>
+                        <div class="status-badge status-received">
+                            <?php echo ucfirst($row['request']); ?>
+                        </div>
+                    </div>
+                    <div class="request-body">
+                        <div class="product-image">
+                            <?php
+                            $images = @unserialize($row['img']);
+                            if ($images === false) {
+                                $images = [$row['img']];
+                            }
+                            if (!empty($images)) {
+                                echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                            }
+                            ?>
+                        </div>
+                        <div class="request-details">
+                            <div class="customer-section">
+                                <h3><i class="fas fa-user"></i> Customer Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
+                                    <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
+                                    <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                    <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                 </div>
                             </div>
-
-                            <div class="request-body">
-                                <div class="product-image">
-                                    <?php
-                                    $images = @unserialize($row['img']);
-                                    if ($images === false) {
-                                        $images = [$row['img']];
-                                    }
-                                    if (!empty($images)) {
-                                        echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
-                                    }
-                                    ?>
-                                </div>
-
-                                <div class="request-details">
-                                    <div class="customer-section">
-                                        <h3><i class="fas fa-user"></i> Customer Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
-                                            <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
-                                            <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
-                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="order-section">
-                                        <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
-                                            <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
-                                            <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
-                                            <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
-                                            <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="action-buttons">
-                                        <button class="receive-btn" onclick="updateStatus(<?php echo $row['id']; ?>, 'returned')">
-                                            <i class="fas fa-undo"></i> Return Gown
-                                        </button>
-                                    </div>
+                            <div class="order-section">
+                                <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
+                                    <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
+                                    <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
+                                    <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
+                                    <p class="total-price">
+                                        <strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?>
+                                        <?php echo ($row['batch'] == true) ? ' (Batch)' : ''; ?>
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                <?php
-                    endif;
-                endwhile;
-                ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            
+            <div class="batch-action-buttons">
+                <button class="receive-btn" onclick="updateStatus([<?php echo implode(',', array_map(function($r) { return $r['id']; }, $group)); ?>], 'returned')">
+                    <i class="fas fa-undo"></i> Return Batch Gowns
+                </button>
             </div>
+            </div>
+        <?php else: ?>
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="order-id">Order #<?php echo $firstRow['id']; ?></div>
+                    <div class="status-badge status-received">
+                        <?php echo ucfirst($firstRow['request']); ?>
+                    </div>
+                </div>
+                <div class="request-body">
+                    <div class="product-image">
+                        <?php
+                        $images = @unserialize($firstRow['img']);
+                        if ($images === false) {
+                            $images = [$firstRow['img']];
+                        }
+                        if (!empty($images)) {
+                            echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                        }
+                        ?>
+                    </div>
+                    <div class="request-details">
+                        <div class="customer-section">
+                            <h3><i class="fas fa-user"></i> Customer Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Name:</strong> <?php echo htmlspecialchars($firstRow['fname'] . ' ' . $firstRow['sname']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($firstRow['email']); ?></p>
+                                <p><strong>Address:</strong> <?php echo htmlspecialchars($firstRow['address']); ?></p>
+                                <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($firstRow['cellnumber']); ?></p>
+                            </div>
+                        </div>
+                        <div class="order-section">
+                            <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Gown:</strong> <?php echo htmlspecialchars($firstRow['gown_name']); ?></p>
+                                <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($firstRow['service'])); ?></p>
+                                <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['date_rented'])); ?></p>
+                                <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['duedate'])); ?></p>
+                                <p class="total-price">
+                                    <strong>Total:</strong> ₱<?php echo number_format($firstRow['total'], 2); ?>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="receive-btn" onclick="updateStatus(<?php echo $firstRow['id']; ?>, 'returned')">
+                                <i class="fas fa-undo"></i> Return Gown
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif;
+    endforeach;
+    if ($currentEmail !== null) {
+        echo '</div>';
+    }
+    ?>
+</div>
 
-            <div class="tab-content" id="returned-tab">
-                <?php
-                $result_all->data_seek(0);
-                while ($row = $result_all->fetch_assoc()):
-                    if ($row['request'] == 'returned'):
-                ?>
-                        <div class="request-card">
-                            <div class="request-header">
-                                <div class="order-id">Order #<?php echo $row['id']; ?></div>
-                                <div class="status-badge status-returned">
-                                    <?php echo ucfirst($row['request']); ?>
+<div class="tab-content" id="returned-tab">
+    <?php
+    $currentEmail = null;
+    $batchGroups = array();
+    
+    $result_all->data_seek(0);
+    while ($row = $result_all->fetch_assoc()) {
+        if ($row['request'] == 'returned') {
+            $key = $row['email'] . '-' . $row['batch'];
+            if (!isset($batchGroups[$key])) {
+                $batchGroups[$key] = array();
+            }
+            $batchGroups[$key][] = $row;
+        }
+    }
+
+    foreach ($batchGroups as $group):
+        $firstRow = $group[0];
+        if ($currentEmail !== $firstRow['email']) {
+            if ($currentEmail !== null) {
+                echo '</div>';
+            }
+            $currentEmail = $firstRow['email'];
+            echo '<div class="gown-group">';
+            echo '<h2>' . htmlspecialchars($currentEmail) . '</h2>';
+        }
+        
+        if ($firstRow['batch']):
+            echo '<div class="batch-group">';
+            echo '<h3>Batch Order for ' . htmlspecialchars($firstRow['email']) . '</h3>';
+            
+            foreach ($group as $row):
+    ?>
+                <div class="request-card">
+                    <div class="request-header">
+                        <div class="order-id">Order #<?php echo $row['id']; ?></div>
+                        <div class="status-badge status-returned">
+                            <?php echo ucfirst($row['request']); ?>
+                        </div>
+                    </div>
+                    <div class="request-body">
+                        <div class="product-image">
+                            <?php
+                            $images = @unserialize($row['img']);
+                            if ($images === false) {
+                                $images = [$row['img']];
+                            }
+                            if (!empty($images)) {
+                                echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                            }
+                            ?>
+                        </div>
+                        <div class="request-details">
+                            <div class="customer-section">
+                                <h3><i class="fas fa-user"></i> Customer Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
+                                    <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
+                                    <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
+                                    <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
                                 </div>
                             </div>
-                            <div class="request-body">
-                                <div class="product-image">
-                                    <?php
-                                    $images = @unserialize($row['img']);
-                                    if ($images === false) {
-                                        $images = [$row['img']];
-                                    }
-                                    if (!empty($images)) {
-                                        echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
-                                    }
-                                    ?>
-                                </div>
-
-                                <div class="request-details">
-                                    <div class="customer-section">
-                                        <h3><i class="fas fa-user"></i> Customer Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Name:</strong> <?php echo htmlspecialchars($row['fname'] . ' ' . $row['sname']); ?></p>
-                                            <p><strong>Email:</strong> <?php echo htmlspecialchars($row['email']); ?></p>
-                                            <p><strong>Address:</strong> <?php echo htmlspecialchars($row['address']); ?></p>
-                                            <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($row['cellnumber']); ?></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="order-section">
-                                        <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
-                                        <div class="details-grid">
-                                            <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
-                                            <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
-                                            <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
-                                            <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
-                                            <p><strong>Returned Date:</strong> <?php echo date('F d, Y', strtotime($row['returned_date'])); ?></p>
-                                            <p class="total-price"><strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?></p>
-                                        </div>
-                                    </div>
+                            <div class="order-section">
+                                <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                                <div class="details-grid">
+                                    <p><strong>Gown:</strong> <?php echo htmlspecialchars($row['gown_name']); ?></p>
+                                    <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($row['service'])); ?></p>
+                                    <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($row['date_rented'])); ?></p>
+                                    <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($row['duedate'])); ?></p>
+                                    <p><strong>Returned Date:</strong> <?php echo date('F d, Y', strtotime($row['returned_date'])); ?></p>
+                                    <p class="total-price">
+                                        <strong>Total:</strong> ₱<?php echo number_format($row['total'], 2); ?>
+                                        <?php echo ($row['batch'] == true) ? ' (Batch)' : ''; ?>
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                <?php
-                    endif;
-                endwhile;
-                ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
             </div>
+        <?php else: ?>
+            <div class="request-card">
+                <div class="request-header">
+                    <div class="order-id">Order #<?php echo $firstRow['id']; ?></div>
+                    <div class="status-badge status-returned">
+                        <?php echo ucfirst($firstRow['request']); ?>
+                    </div>
+                </div>
+                <div class="request-body">
+                    <div class="product-image">
+                        <?php
+                        $images = @unserialize($firstRow['img']);
+                        if ($images === false) {
+                            $images = [$firstRow['img']];
+                        }
+                        if (!empty($images)) {
+                            echo '<img src="uploaded_img/' . htmlspecialchars($images[0]) . '" alt="Gown Image">';
+                        }
+                        ?>
+                    </div>
+                    <div class="request-details">
+                        <div class="customer-section">
+                            <h3><i class="fas fa-user"></i> Customer Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Name:</strong> <?php echo htmlspecialchars($firstRow['fname'] . ' ' . $firstRow['sname']); ?></p>
+                                <p><strong>Email:</strong> <?php echo htmlspecialchars($firstRow['email']); ?></p>
+                                <p><strong>Address:</strong> <?php echo htmlspecialchars($firstRow['address']); ?></p>
+                                <p><strong>Cell Number:</strong> <?php echo htmlspecialchars($firstRow['cellnumber']); ?></p>
+                            </div>
+                        </div>
+                        <div class="order-section">
+                            <h3><i class="fas fa-shopping-bag"></i> Order Details</h3>
+                            <div class="details-grid">
+                                <p><strong>Gown:</strong> <?php echo htmlspecialchars($firstRow['gown_name']); ?></p>
+                                <p><strong>Service:</strong> <?php echo htmlspecialchars(ucfirst($firstRow['service'])); ?></p>
+                                <p><strong>Rent Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['date_rented'])); ?></p>
+                                <p><strong>Due Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['duedate'])); ?></p>
+                                <p><strong>Returned Date:</strong> <?php echo date('F d, Y', strtotime($firstRow['returned_date'])); ?></p>
+                                <p class="total-price">
+                                    <strong>Total:</strong> ₱<?php echo number_format($firstRow['total'], 2); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif;
+    endforeach;
+    if ($currentEmail !== null) {
+        echo '</div>';
+    }
+    ?>
+</div>
             <!-- Confirmation Modal -->
             <div id="confirmModal" class="modal">
                 <div class="modal-content">
@@ -700,94 +1077,81 @@ $result_reservations = $conn->query($sql_reservations);
                     }
                 }
 
-                function updateStatus(id, status) {
-                    if (status === 'declined') {
+                function updateStatus(ids, status) {
+    if (!Array.isArray(ids)) {
+        ids = [ids];
+    }
 
-                        const declineModal = document.getElementById('declineModal');
-                        const reasonSelect = document.getElementById('declineReason');
-                        const otherReason = document.getElementById('otherReason');
-                        const submitBtn = document.getElementById('submitDecline');
-                        const cancelBtn = document.getElementById('cancelDecline');
+    if (status === 'cancelled') {
+        const declineModal = document.getElementById('declineModal');
+        const reasonSelect = document.getElementById('declineReason');
+        const otherReason = document.getElementById('otherReason');
+        const submitBtn = document.getElementById('submitDecline');
 
-                        declineModal.style.display = 'block';
+        declineModal.style.display = 'block';
 
-                        reasonSelect.onchange = function() {
-                            otherReason.style.display = this.value === 'Other' ? 'block' : 'none';
-                        };
+        submitBtn.onclick = function() {
+            const reason = reasonSelect.value === 'Other' ? otherReason.value : reasonSelect.value;
+            if (!reason) {
+                alert('Please select or specify a reason');
+                return;
+            }
 
-                        submitBtn.onclick = function() {
-                            const reason = reasonSelect.value === 'Other' ? otherReason.value : reasonSelect.value;
-                            if (!reason) {
-                                alert('Please select or specify a reason');
-                                return;
-                            }
+            Promise.all(ids.map(id => {
+                const formData = new FormData();
+                formData.append('action', 'update_status');
+                formData.append('id', id);
+                formData.append('status', status);
+                formData.append('reason', reason);
 
-                            const formData = new FormData();
-                            formData.append('action', 'update_status');
-                            formData.append('id', id);
-                            formData.append('status', status);
-                            formData.append('reason', reason);
-
-                            fetch(window.location.href, {
-                                    method: 'POST',
-                                    body: formData
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        location.reload();
-                                    } else {
-                                        alert('Error updating status');
-                                    }
-                                });
-                            declineModal.style.display = 'none';
-                        };
-
-                        cancelBtn.onclick = function() {
-                            declineModal.style.display = 'none';
-                        };
-
-                        window.onclick = function(event) {
-                            if (event.target == declineModal) {
-                                declineModal.style.display = 'none';
-                            }
-                        };
-                    } else {
-
-                        const modal = document.getElementById('confirmModal');
-                        const message = document.getElementById('confirmMessage');
-                        const yesBtn = document.getElementById('confirmYes');
-                        const noBtn = document.getElementById('confirmNo');
-
-                        message.textContent = 'Are you sure you want to ' + (status === 'payment' ? 'accept' : status) + ' this request?';
-                        modal.style.display = 'block';
-
-                        yesBtn.onclick = function() {
-                            const formData = new FormData();
-                            formData.append('action', 'update_status');
-                            formData.append('id', id);
-                            formData.append('status', status);
-
-                            fetch(window.location.href, {
-                                    method: 'POST',
-                                    body: formData
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        location.reload();
-                                    } else {
-                                        alert('Error updating status');
-                                    }
-                                });
-                            modal.style.display = 'none';
-                        };
-
-                        noBtn.onclick = function() {
-                            modal.style.display = 'none';
-                        };
-                    }
+                return fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json());
+            })).then(results => {
+                if (results.every(data => data.success)) {
+                    location.reload();
+                } else {
+                    alert('Error updating some orders');
                 }
+            });
+
+            declineModal.style.display = 'none';
+        };
+    } else {
+        const modal = document.getElementById('confirmModal');
+        const message = document.getElementById('confirmMessage');
+        const yesBtn = document.getElementById('confirmYes');
+        
+        message.textContent = 'Are you sure you want to ' + 
+            (status === 'payment' ? 'accept' : status) + 
+            (ids.length > 1 ? ' these requests?' : ' this request?');
+        
+        modal.style.display = 'block';
+
+        yesBtn.onclick = function() {
+            Promise.all(ids.map(id => {
+                const formData = new FormData();
+                formData.append('action', 'update_status');
+                formData.append('id', id);
+                formData.append('status', status);
+
+                return fetch(window.location.href, {
+                    method: 'POST', 
+                    body: formData
+                }).then(response => response.json());
+            })).then(results => {
+                if (results.every(data => data.success)) {
+                    location.reload();
+                } else {
+                    alert('Error updating some orders');
+                }
+            });
+
+            modal.style.display = 'none';
+        };
+    }
+}
             </script>
 </body>
 

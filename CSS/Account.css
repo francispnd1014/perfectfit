@@ -500,6 +500,7 @@ a {
   font-size: 25px;
   opacity: 1;
   transition: opacity 0.3s;
+  padding: 10px;
   flex-direction: column; /* Add this to stack text vertically */
 }
 

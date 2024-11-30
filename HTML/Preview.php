@@ -146,38 +146,71 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['favorite'])) {
     header("Location: " . $_SERVER['REQUEST_URI']);
     exit();
 }
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rent_gown'])) {
-    $deliveryDate = $_POST['date_rented'];
-    $returnDate = $_POST['duedate'];
-    $cellnumber = $_POST['cellnumber'];
-    $deliveryAddress = $_POST['address'];
-    $service = $_POST['service'];
-    $total = floatval(str_replace(',', '', $_POST['total_price']));
-    $fullName = $_SESSION['fullname'];
-    $email = $_SESSION['email'];
-    $gownName = $gown_name;
-
-
-    $cellnumber = filter_var($cellnumber, FILTER_SANITIZE_NUMBER_INT);
-    if (strlen($cellnumber) > 15) {
-        echo "Cell number is too long.";
-        exit();
+// In the rent gown section, modify the code like this:
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['rent_gown']) && isset($_POST['gown_ids'])) {
+        $deliveryDate = $_POST['date_rented'];
+        $returnDate = $_POST['duedate'];
+        $cellnumber = $_POST['cellnumber'];
+        $deliveryAddress = $_POST['address'];
+        $fullName = $_SESSION['fullname'];
+        $service = $_POST['service'];
+        $total = floatval(str_replace(',', '', $_POST['total_price']));
+        
+        // Set batch based on number of gowns
+        $batch = (count($_POST['gown_ids']) > 1) ? 1 : 0;
+    
+        foreach ($_POST['gown_ids'] as $gown_id) {
+            $stmt = $conn->prepare("SELECT name FROM product WHERE id = ?");
+            $stmt->bind_param("i", $gown_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $gown = $result->fetch_assoc();
+    
+            // Modified INSERT query to include batch as boolean
+            $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, cellnumber, duedate, address, service, batch, total, request, reservation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0)");
+            $stmt->bind_param("sssssssid", $email, $gown['name'], $deliveryDate, $cellnumber, $returnDate, $deliveryAddress, $service, $batch, $total);
+            $stmt->execute();
+        }
+    
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('rentModal').style.display = 'none';
+                document.getElementById('successModal').style.display = 'block';
+            });
+        </script>";
     }
 
+$isMultiRent = isset($_GET['multi']) && $_GET['multi'] === 'true';
+$gowns = [];
+$total_base_price = 0;
 
-    $stmt = $conn->prepare("INSERT INTO rent (email, gownname_rented, date_rented, cellnumber, duedate, address, service, total, request, reservation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0)");
-    $stmt->bind_param("sssssssd", $email, $gownName, $deliveryDate, $cellnumber, $returnDate, $deliveryAddress, $service, $total);
+if ($isMultiRent) {
+    $gown_ids = explode(',', $_GET['id']);
+    $placeholders = str_repeat('?,', count($gown_ids) - 1) . '?';
+    $query = "SELECT * FROM product WHERE id IN ($placeholders)";
+
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param(str_repeat('i', count($gown_ids)), ...$gown_ids);
     $stmt->execute();
-    $stmt->close();
+    $result = $stmt->get_result();
 
+    while ($row = $result->fetch_assoc()) {
+        $gowns[] = $row;
+    }
+    $total_base_price = array_sum(array_column($gowns, 'price'));
+} else {
+    $gown_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    $query = "SELECT * FROM product WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $gown_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-    echo "<script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('rentModal').style.display = 'none';
-            document.getElementById('successModal').style.display = 'block';
-        });
-    </script>";
+    if ($result->num_rows > 0) {
+        $gown = $result->fetch_assoc();
+        $gowns[] = $gown;
+        $total_base_price = $gown['price'];
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reserve_gown'])) {
@@ -557,41 +590,50 @@ $stmt->close();
                 <span class="close">&times;</span>
                 <div class="modal-columns">
                     <form method="POST" class="rent-form">
+                        <?php if ($isMultiRent): ?>
+                            <h3>Selected Gowns:</h3>
+                            <?php foreach ($gowns as $gown): ?>
+                                <div class="gown-item">
+                                    <p><?php echo htmlspecialchars($gown['name']); ?> - ₱<?php echo number_format($gown['price'], 2); ?></p>
+                                    <input type="hidden" name="gown_ids[]" value="<?php echo $gown['id']; ?>">
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <h3><?php echo htmlspecialchars($gowns[0]['name']); ?></h3>
+                            <input type="hidden" name="gown_ids[]" value="<?php echo $gowns[0]['id']; ?>">
+                        <?php endif; ?>
+                        <p class="notice">*Note: You can't cancel a batch rent. (Still experimental a feature this for demo only)</p>
+
                         <label for="date_rented">Date of Delivery:</label>
                         <input class="int-delivery" type="date" id="date_rented" name="date_rented" required
                             <?php
                             $nextAvailable = getNextAvailableDate($conn, $gown_name);
                             echo 'min="' . $nextAvailable . '"';
                             ?>>
-                        <div class="availability-info">
-                            <?php if ($gown_status == 1): ?>
-                                <p class="notice">This gown will be available from <?php echo date('F j, Y', strtotime($nextAvailable)); ?></p>
-                            <?php endif; ?>
-                        </div>
 
                         <label for="duedate">Date of Return:</label>
-                        <input class="int-delivery" type="date" id="duedate" name="duedate" required
-                            <?php
-                            $nextAvailable = getNextAvailableDate($conn, $gown_name);
-                            echo 'min="' . $nextAvailable . '"';
-                            ?>>
+                        <input class="int-delivery" type="date" id="duedate" name="duedate" required>
+
                         <label for="address">Delivery Address:</label>
                         <input class="int-delivery" type="text" id="address" name="address" required>
 
-                        <label for="address">Cellphone Number:</label>
-                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber" value="<?php echo htmlspecialchars($contact_number); ?>" required maxlength="11" pattern="\d{11}" required>
+                        <label for="cellnumber">Cellphone Number:</label>
+                        <input class="int-delivery" type="text" id="cellnumber" name="cellnumber"
+                            value="<?php echo htmlspecialchars($contact_number); ?>" required maxlength="11" pattern="\d{11}">
+
                         <label for="service">Service:</label>
                         <select class="int-delivery" id="service" name="service" required onchange="updateServiceFee()">
                             <option value="delivery">Delivery</option>
                             <option value="pickup">Pickup</option>
                         </select>
+
                         <div class="price-details">
-                            <p>Rent Price: <span class="price">₱<?php echo number_format($gown_rent, 2, '.', ','); ?></span></p>
-                            <p>Service Fee: <span class="price" id="service-fee">₱<?php echo number_format($service_fee, 2, '.', ','); ?></span></p>
-                            <p>Additional Fee (Deposit): <span class="price">₱<?php echo number_format(2000, 2, '.', ','); ?></span></p>
-                            <p>Total (COD): <span class="price" id="total-price">₱<?php echo number_format($total_price, 2, '.', ','); ?></span></p>
+                            <p>Total Rent Price: <span class="price">₱<?php echo number_format($total_base_price, 2); ?></span></p>
+                            <p>Service Fee: <span class="price" id="service-fee">₱200.00</span></p>
+                            <p>Additional Fee (Deposit): <span class="price">₱<?php echo number_format(2000 * count($gowns), 2); ?></span></p>
+                            <p>Total (COD): <span class="price" id="total-price"></span></p>
                         </div>
-                        <input type="hidden" id="total-price-hidden" name="total_price" value="<?php echo number_format($total_price, 2, '.', ','); ?>">
+                        <input type="hidden" id="total-price-hidden" name="total_price">
                         <button class="btn-delivery" type="submit" name="rent_gown">Rent Now</button>
                         <p class="notice">*Note: Online payment is not yet available. Please pay upon delivery.</p>
                     </form>
@@ -655,10 +697,6 @@ $stmt->close();
                     <span class="details-value"><?php echo isset($cellnumber) ? htmlspecialchars($cellnumber) : ''; ?></span>
                 </div>
                 <div class="details-container">
-                    <span class="details-label">Gown Name:</span>
-                    <span class="details-value"><?php echo isset($gownName) ? htmlspecialchars($gownName) : ''; ?></span>
-                </div>
-                <div class="details-container">
                     <span class="details-label">Date of Delivery:</span>
                     <span class="details-value">
                         <?php
@@ -695,8 +733,113 @@ $stmt->close();
                 <button class="btn-confirm" id="goBackButton">Go back to shop</button>
             </div>
         </div>
+        <div id="confirmModal" class="modal">
+    <div class="modal-content">
+        <h3>Confirmation</h3>
+        <p>Do you want to continue?</p>
+        <div class="confirm-buttons">
+            <button id="confirmYes" class="btn-delivery">Yes</button>
+            <button id="confirmNo" class="btn-delivery">No</button>
+        </div>
+    </div>
+</div>
 
         <script>
+            // Get the confirmation modal
+const confirmModal = document.getElementById("confirmModal");
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
+let currentForm = null;
+
+// Modify rent button click handler
+if (rentBtn) {
+    rentBtn.onclick = function(e) {
+        e.preventDefault();
+        confirmModal.style.display = "block";
+        currentForm = 'rent';
+    }
+}
+
+// Modify reserve button click handler
+if (document.querySelector(".reserve-btn")) {
+    document.querySelector(".reserve-btn").onclick = function(e) {
+        e.preventDefault();
+        confirmModal.style.display = "block";
+        currentForm = 'reserve';
+    }
+}
+
+// Handle confirmation
+confirmYes.onclick = function() {
+    confirmModal.style.display = "none";
+    if (currentForm === 'rent') {
+        rentModal.style.display = "block";
+    } else if (currentForm === 'reserve') {
+        reservationModal.style.display = "block";
+        // Set minimum date for reservation
+        var today = new Date();
+        today.setMonth(today.getMonth() + 2);
+        today.setDate(today.getDate() + 1);
+        var minDate = today.toISOString().split('T')[0];
+        document.getElementById('reservation_date').min = minDate;
+        document.getElementById('reservation_return').min = minDate;
+    }
+}
+
+confirmNo.onclick = function() {
+    confirmModal.style.display = "none";
+}
+
+// Close confirmation modal when clicking outside
+window.onclick = function(event) {
+    if (event.target == confirmModal) {
+        confirmModal.style.display = "none";
+    }
+    if (event.target == rentModal) {
+        rentModal.style.display = "none";
+    }
+    if (event.target == successModal) {
+        successModal.style.display = "none";
+    }
+    if (event.target == reservationModal) {
+        reservationModal.style.display = "none";
+    }
+}
+            function updateServiceFee() {
+                const serviceSelect = document.getElementById("service");
+                const serviceFee = serviceSelect.value === "pickup" ? 0 : 200;
+                const basePrice = <?php echo $total_base_price; ?>; // This now contains sum of all gown prices
+                const numGowns = <?php echo count($gowns); ?>;
+                const deposit = 2000 * numGowns; // Deposit per gown
+
+                // Update service fee display
+                document.getElementById("service-fee").textContent =
+                    '₱' + serviceFee.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+
+                // Calculate total including all gowns
+                const totalPrice = basePrice + serviceFee + deposit;
+
+                // Update total price display
+                document.getElementById("total-price").textContent =
+                    '₱' + totalPrice.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                document.getElementById("total-price-hidden").value = totalPrice.toFixed(2);
+            }
+
+            // Call updateServiceFee when the page loads and when service type changes
+            document.addEventListener('DOMContentLoaded', function() {
+                updateServiceFee();
+
+                // Add event listener for service type changes
+                document.getElementById("service").addEventListener('change', updateServiceFee);
+
+                // Date validation
+                const dateRented = document.getElementById('date_rented');
+                const duedate = document.getElementById('duedate');
+
+                dateRented.addEventListener('change', function() {
+                    duedate.min = this.value;
+                });
+            });
             // Replace your existing history handling code with this:
             let currentIndex = 0;
             let histories = [window.location.href];
@@ -815,24 +958,6 @@ $stmt->close();
                     }
                 });
             });
-
-            function updateServiceFee() {
-                var serviceSelect = document.getElementById("service");
-                var serviceFeeElement = document.getElementById("service-fee");
-                var totalPriceElement = document.getElementById("total-price");
-                var totalPriceHidden = document.getElementById("total-price-hidden");
-                var gownRent = <?php echo $gown_rent; ?>;
-                var serviceFee = serviceSelect.value === "pickup" ? 0 : 200;
-                var deposit = 2000;
-
-                serviceFeeElement.textContent = serviceFee === 0 ? '' : '₱' + serviceFee.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                var totalPrice = (gownRent + serviceFee + deposit).toFixed(2);
-                totalPriceElement.textContent = '₱' + totalPrice.replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                totalPriceHidden.value = totalPrice;
-            }
-
-
-            document.addEventListener('DOMContentLoaded', updateServiceFee);
 
             function toggleDropdown() {
                 var dropdown = document.getElementById("myDropdown");

@@ -448,6 +448,14 @@ a {
     color: black;
 }
 
+.multi {
+    background-color: #FFD700;
+    color: black;
+    border: none;
+    padding: 13px;
+    display: none;
+}
+
 .clear-button {
     background-color: transparent;
     color: rgb(0, 0, 0);

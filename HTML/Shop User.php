@@ -308,62 +308,51 @@ $select = mysqli_query($conn, $select_query);
                                 <option value="rent-price-desc">High to Low</option>
                             </select>
                             <a href="Color Analysis.php"><button class="analysis">Color Analysis</button></a>
+                            <button id="rentSelectedBtn" class="multi">Rent Selected</button>
                         </div>
+
                         <div class="product-display">
-                            <?php while ($row = mysqli_fetch_assoc($select)) {
-
-                                $rental_details = null;
-                                if ($row['status'] == 1) {
-                                    $rental_query = "SELECT date_rented, duedate FROM rent WHERE gownname_rented = ?";
-                                    $stmt = $conn->prepare($rental_query);
-                                    $stmt->bind_param("s", $row['name']);
-                                    $stmt->execute();
-                                    $rental_result = $stmt->get_result();
-                                    if ($rental_result->num_rows > 0) {
-                                        $rental_details = $rental_result->fetch_assoc();
-                                    }
-                                    $stmt->close();
-                                }
-                            ?>
-                                <a href="Preview.php?id=<?php echo $row['id']; ?>" class="card-link">
-                                    <div class="card">
-                                        <?php if ($row['status'] == 1) { ?>
-                                            <div class="rented-overlay">
-                                                <?php if ($rental_details) { ?>
-                                                    <div class="rental-details small-font">
-                                                        <p>Date Rented:</p>
-                                                        <p><?php echo htmlspecialchars(date('F j, Y', strtotime($rental_details['date_rented']))); ?></p>
-                                                        <p>Date of Return:</p>
-                                                        <p><?php echo htmlspecialchars(date('F j, Y', strtotime($rental_details['duedate']))); ?></p>
-                                                    </div>
-                                                <?php } ?>
-                                            </div>
+                            <?php while ($row = mysqli_fetch_assoc($select)) { ?>
+                                <div class="card-wrapper">
+                                    <div class="image" style="position: relative;">
+                                        <?php if ($row['status'] != 1) { // Only show checkbox if gown is not rented 
+                                        ?>
+                                            <input type="checkbox"
+                                                class="gown-checkbox"
+                                                data-gown-id="<?php echo $row['id']; ?>"
+                                                data-gown-name="<?php echo htmlspecialchars($row['name']); ?>"
+                                                data-gown-price="<?php echo $row['price']; ?>"
+                                                onclick="event.stopPropagation()"
+                                                style="position: absolute; top: 10px; right: 10px; z-index: 10; width: 20px; height: 20px;">
                                         <?php } ?>
+                                        <a href="Preview.php?id=<?php echo $row['id']; ?>" class="card-link">
+                                            <div class="card">
+                                                <?php
+                                                $images = @unserialize($row['img']);
+                                                if ($images === false && $row['img'] !== 'b:0;') {
+                                                    $images = [$row['img']];
+                                                }
 
-                                        <div class="image">
-                                            <?php
-                                            $images = @unserialize($row['img']);
-                                            if ($images === false && $row['img'] !== 'b:0;') {
-                                                $images = [$row['img']];
-                                            }
-
-                                            if (!empty($images)) {
-                                                $image = $images[0];
-                                                echo '<img src="uploaded_img/' . htmlspecialchars($image) . '" alt="" style="width: 200px; height: 250px;">';
-                                            }
-                                            ?>
-                                        </div>
-                                        <div class="caption">
-                                            <p class="product_name ellipsis"><?php echo $row['name']; ?></p>
-                                            <?php if ($row['tally'] == 0) { ?>
-                                                <p class="tally_status">Brandnew</p>
-                                            <?php } else { ?>
-                                                <p class="tally_status">Used</p>
-                                            <?php } ?>
-                                            <p class="price"><b>Rent: ₱<?php echo number_format($row['price'], 2); ?></b></p>
-                                        </div>
+                                                if (!empty($images)) {
+                                                    $image = $images[0];
+                                                    echo '<img src="uploaded_img/' . htmlspecialchars($image) . '" alt="" style="width: 200px; height: 250px;">';
+                                                }
+                                                ?>
+                                                <div class="caption">
+                                                    <p class="product_name ellipsis"><?php echo $row['name']; ?></p>
+                                                    <?php if ($row['status'] == 1) { ?>
+                                                        <p class="tally_status rented">Rented</p>
+                                                    <?php } else if ($row['tally'] == 0) { ?>
+                                                        <p class="tally_status">Brandnew</p>
+                                                    <?php } else { ?>
+                                                        <p class="tally_status">Used</p>
+                                                    <?php } ?>
+                                                    <p class="price"><b>Rent: ₱<?php echo number_format($row['price'], 2); ?></b></p>
+                                                </div>
+                                            </div>
+                                        </a>
                                     </div>
-                                </a>
+                                </div>
                             <?php } ?>
                         </div>
                     </div>
@@ -373,6 +362,33 @@ $select = mysqli_query($conn, $select_query);
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.gown-checkbox');
+            const rentSelectedBtn = document.getElementById('rentSelectedBtn');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const checkedBoxes = document.querySelectorAll('.gown-checkbox:checked');
+                    rentSelectedBtn.style.display = checkedBoxes.length > 0 ? 'block' : 'none';
+                });
+            });
+
+            rentSelectedBtn.addEventListener('click', function() {
+                const selectedGowns = [];
+                document.querySelectorAll('.gown-checkbox:checked').forEach(checkbox => {
+                    selectedGowns.push({
+                        id: checkbox.dataset.gownId,
+                        name: checkbox.dataset.gownName,
+                        price: checkbox.dataset.gownPrice
+                    });
+                });
+
+                if (selectedGowns.length > 0) {
+                    const gownIds = selectedGowns.map(gown => gown.id).join(',');
+                    window.location.href = `Preview.php?id=${gownIds}&multi=true`;
+                }
+            });
+        });
         // Replace your existing history handling code with this:
         let currentIndex = 0;
         let histories = [window.location.href];

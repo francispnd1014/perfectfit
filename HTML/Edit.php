@@ -112,7 +112,42 @@ if (isset($_POST['delete_image']) && $product_id) {
 } elseif (!$product_id) {
     echo "<script>alert('Product ID is missing.');</script>";
 }
+if (isset($_POST['action']) && $_POST['action'] === 'delete_image') {
+    $image_to_delete = $_POST['image'];
+    $product_id = $_POST['product_id'];
+    
+    $query = "SELECT img FROM product WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $product = $result->fetch_assoc();
 
+    $images = @unserialize($product['img']);
+    if ($images === false && $product['img'] !== 'b:0;') {
+        $images = [$product['img']];
+    }
+
+    if (($key = array_search($image_to_delete, $images)) !== false) {
+        unset($images[$key]);
+        $updated_images = serialize(array_values($images));
+
+        $update_query = "UPDATE product SET img=? WHERE id=?";
+        $stmt = $conn->prepare($update_query);
+        $stmt->bind_param("si", $updated_images, $product_id);
+        
+        if ($stmt->execute()) {
+            $image_path = 'uploaded_img/' . $image_to_delete;
+            if (file_exists($image_path)) {
+                unlink($image_path);
+            }
+            echo json_encode(['success' => true]);
+            exit;
+        }
+    }
+    echo json_encode(['success' => false]);
+    exit;
+}
 
 $conn->close();
 ?>
@@ -154,7 +189,7 @@ $conn->close();
                 <div class="form-columns">
                     <div class="left-column">
                         <input type="text" placeholder="Product name" name="product_name" id="edit_product_name" class="box" value="<?php echo $product['name']; ?>">
-                        <input type="text" placeholder="Product rent price" name="product_rent" id="edit_product_rent" class="box" value="<?php echo $product['price']; ?>">
+                        <input type="number" placeholder="Product rent price" name="product_rent" id="edit_product_rent" class="box" value="<?php echo $product['price']; ?>">
                         <div class="option">
                             <button type="button" class="btn-option" onclick="showSelectColor()">Select Color</button>
                             <button type="button" class="btn-option" onclick="showNewColor()">Add New Color</button>
@@ -255,21 +290,22 @@ $conn->close();
                             </label>
                         </div>
                         <div class="image">
-                            <?php
-                            $images = @unserialize($product['img']);
-                            if ($images === false && $product['img'] !== 'b:0;') {
-                                $images = [$product['img']];
-                            }
+    <?php
+    $images = @unserialize($product['img']);
+    if ($images === false && $product['img'] !== 'b:0;') {
+        $images = [$product['img']];
+    }
 
-                            if (!empty($images)) {
-                                foreach ($images as $image) {
-                                    echo '<div class="image-container" style="display: inline-block; position: relative; margin: 5px;">';
-                                    echo '<img src="uploaded_img/' . htmlspecialchars($image) . '" alt="" style="width: 100px; height: 100px;">';
-                                    echo '</div>';
-                                }
-                            }
-                            ?>
-                        </div>
+    if (!empty($images)) {
+        foreach ($images as $image) {
+            echo '<div class="image-container" data-image="' . htmlspecialchars($image) . '" style="display: inline-block; position: relative; margin: 5px;">';
+            echo '<img src="uploaded_img/' . htmlspecialchars($image) . '" alt="" style="width: 100px; height: 100px;">';
+            echo '<button type="button" class="delete-image-btn" onclick="deleteImage(\'' . htmlspecialchars($image) . '\')">×</button>';
+            echo '</div>';
+        }
+    }
+    ?>
+</div>
                         <input type="file" accept="image/png, image/jpeg, image/jpg" name="product_images[]" class="box2" multiple>
                     </div>
                 </div>
@@ -286,8 +322,84 @@ $conn->close();
             <p>Successfully updated</p>
         </div>
     </div>
-
+    <div id="deleteImageModal" class="modal">
+    <div class="modal-content">
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this image?</p>
+        <div class="modal-buttons">
+            <button id="confirmDelete" class="btn-delete">Delete</button>
+            <button id="cancelDelete" class="btn-cnl1">Cancel</button>
+        </div>
+    </div>
+</div>
     <script>
+function deleteImage(imageName) {
+    const modal = document.getElementById('deleteImageModal');
+    const confirmBtn = document.getElementById('confirmDelete');
+    const cancelBtn = document.getElementById('cancelDelete');
+
+    // Show modal
+    modal.style.display = 'block';
+
+    // Single-use event handlers
+    const handleDelete = () => {
+        const productId = document.getElementById('edit_product_id').value;
+        const formData = new FormData();
+        formData.append('action', 'delete_image');
+        formData.append('image', imageName);
+        formData.append('product_id', productId);
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const imageContainer = document.querySelector(`[data-image="${imageName}"]`);
+                if (imageContainer) {
+                    imageContainer.remove();
+                }
+            } else {
+                const errorModal = document.getElementById('successModal');
+                errorModal.querySelector('p').textContent = 'Failed to delete the image';
+                errorModal.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const errorModal = document.getElementById('successModal');
+            errorModal.querySelector('p').textContent = 'An error occurred while deleting the image';
+            errorModal.style.display = 'block';
+        })
+        .finally(() => {
+            modal.style.display = 'none';
+            cleanup();
+        });
+    };
+
+    const handleCancel = () => {
+        modal.style.display = 'none';
+        cleanup();
+    };
+
+    const cleanup = () => {
+        confirmBtn.removeEventListener('click', handleDelete);
+        cancelBtn.removeEventListener('click', handleCancel);
+        window.removeEventListener('click', handleWindowClick);
+    };
+
+    const handleWindowClick = (event) => {
+        if (event.target === modal) {
+            handleCancel();
+        }
+    };
+
+    // Add event listeners
+    confirmBtn.addEventListener('click', handleDelete);
+    cancelBtn.addEventListener('click', handleCancel);
+    window.addEventListener('click', handleWindowClick);
+}
         // Replace your existing history handling code with this:
         let currentIndex = 0;
         let histories = [window.location.href];
@@ -375,22 +487,6 @@ $conn->close();
             }
         };
 
-        function deleteImage(imageName) {
-            if (confirm('Are you sure you want to delete this image?')) {
-                const form = document.createElement('form');
-                form.method = 'post';
-                form.action = '<?php echo $_SERVER["PHP_SELF"]; ?>?id=<?php echo $product["id"]; ?>';
-
-                const imageInput = document.createElement('input');
-                imageInput.type = 'hidden';
-                imageInput.name = 'delete_image';
-                imageInput.value = imageName;
-                form.appendChild(imageInput);
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
     </script>
 </body>
 
