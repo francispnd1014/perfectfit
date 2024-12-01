@@ -16,9 +16,11 @@ if (!isset($_SESSION['email'])) {
 require_once 'connection.php';
 $conn = Database::getInstance()->getConnection();
 
-
 $query = "SELECT email, CONCAT(fname, ' ', sname) AS fullname FROM users";
 $result = $conn->query($query);
+if (!$result) {
+    die("Query failed: " . $conn->error);
+}
 
 $users = [];
 if ($result->num_rows > 0) {
@@ -27,17 +29,27 @@ if ($result->num_rows > 0) {
     }
 }
 
-
 $usersResult = $conn->query("SELECT COUNT(*) AS count FROM users");
+if (!$usersResult) {
+    die("Query failed: " . $conn->error);
+}
 $productsResult = $conn->query("SELECT COUNT(*) AS count FROM product");
+if (!$productsResult) {
+    die("Query failed: " . $conn->error);
+}
 $rentedResult = $conn->query("SELECT COUNT(*) AS count FROM rent");
+if (!$rentedResult) {
+    die("Query failed: " . $conn->error);
+}
 
 $usersCount = $usersResult->fetch_assoc()['count'];
 $productsCount = $productsResult->fetch_assoc()['count'];
 $rentedCount = $rentedResult->fetch_assoc()['count'];
 
-
 $themesResult = $conn->query("SELECT theme, COUNT(*) AS count FROM product GROUP BY theme");
+if (!$themesResult) {
+    die("Query failed: " . $conn->error);
+}
 $themes = [];
 $themeCounts = [];
 while ($row = $themesResult->fetch_assoc()) {
@@ -45,25 +57,32 @@ while ($row = $themesResult->fetch_assoc()) {
     $themeCounts[] = $row['count'];
 }
 
-
 $topUserResult = $conn->query("SELECT email, COUNT(*) AS count FROM rent GROUP BY email ORDER BY count DESC LIMIT 1");
+if (!$topUserResult) {
+    die("Query failed: " . $conn->error);
+}
 $topUser = $topUserResult->fetch_assoc();
 
-
 $topGownsResult = $conn->query("SELECT name, img, tally FROM product ORDER BY tally DESC LIMIT 3");
+if (!$topGownsResult) {
+    die("Query failed: " . $conn->error);
+}
 $topGowns = [];
 while ($row = $topGownsResult->fetch_assoc()) {
     $topGowns[] = $row;
 }
 
-
 $pendingRequestsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE request = 'pending'");
+if (!$pendingRequestsResult) {
+    die("Query failed: " . $conn->error);
+}
 $pendingRequestsCount = $pendingRequestsResult->fetch_assoc()['count'];
 
-
 $reservedGownsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE request = 'reserved'");
+if (!$reservedGownsResult) {
+    die("Query failed: " . $conn->error);
+}
 $reservedGownsCount = $reservedGownsResult->fetch_assoc()['count'];
-
 
 // Get revenue from non-batch orders
 $nonBatchRevenue = $conn->query("
@@ -77,7 +96,7 @@ $nonBatchRevenue = $conn->query("
 $batchRevenue = $conn->query("
     SELECT SUM(total) AS revenue 
     FROM (
-        SELECT MIN(id) as batch_id, email, batch, total
+        SELECT MIN(id) as batch_id, email, batch, SUM(total) as total
         FROM rent 
         WHERE request = 'returned' 
         AND batch = 1
@@ -89,13 +108,21 @@ $batchRevenue = $conn->query("
 $totalRevenue = $nonBatchRevenue + $batchRevenue;
 
 $reservedGownsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE reservation = 1");
+if (!$reservedGownsResult) {
+    die("Query failed: " . $conn->error);
+}
 $reservedGownsCount = $reservedGownsResult->fetch_assoc()['count'];
 
 $activeRentalsResult = $conn->query("SELECT COUNT(*) AS count FROM rent WHERE request = 'received'");
+if (!$activeRentalsResult) {
+    die("Query failed: " . $conn->error);
+}
 $activeRentalsCount = $activeRentalsResult->fetch_assoc()['count'];
 
-
 $monthlyRevenueResult = $conn->query("SELECT DATE_FORMAT(date_rented, '%Y-%m') AS month, SUM(total) AS revenue FROM rent WHERE request = 'accepted' GROUP BY month ORDER BY month");
+if (!$monthlyRevenueResult) {
+    die("Query failed: " . $conn->error);
+}
 $months = [];
 $monthlyRevenues = [];
 while ($row = $monthlyRevenueResult->fetch_assoc()) {
