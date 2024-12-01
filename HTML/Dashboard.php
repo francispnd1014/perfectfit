@@ -84,25 +84,38 @@ if (!$reservedGownsResult) {
 }
 $reservedGownsCount = $reservedGownsResult->fetch_assoc()['count'];
 
-// Get revenue from non-batch orders
-$nonBatchRevenue = $conn->query("
-    SELECT SUM(total) AS revenue 
+$nonBatchQuery = "
+    SELECT COALESCE(SUM(total), 0) AS revenue 
     FROM rent 
     WHERE (request = 'returned' OR request = 'received') 
-    AND batch = 0
-")->fetch_assoc()['revenue'] ?? 0;
+    AND (batch = 0 OR batch IS NULL)
+";
+$nonBatchResult = $conn->query($nonBatchQuery);
+if (!$nonBatchResult) {
+    die("Non-batch query failed: " . $conn->error);
+}
+$nonBatchRevenue = $nonBatchResult->fetch_assoc()['revenue'];
 
 // Get revenue from batch orders
-$batchRevenue = $conn->query("
-    SELECT SUM(total) AS revenue 
-    FROM (
-        SELECT MIN(id) as batch_id, email, batch, SUM(total) as total
-        FROM rent 
-        WHERE (request = 'returned' OR request = 'received') 
-        AND batch = 1
-        GROUP BY email, batch
-    ) AS batch_groups
-")->fetch_assoc()['revenue'] ?? 0;
+$batchQuery = "
+    SELECT COALESCE(SUM(total), 0) AS revenue 
+    FROM rent 
+    WHERE (request = 'returned' OR request = 'received') 
+    AND batch = 1
+";
+$batchResult = $conn->query($batchQuery);
+if (!$batchResult) {
+    die("Batch query failed: " . $conn->error);
+}
+$batchRevenue = $batchResult->fetch_assoc()['revenue'];
+
+// Calculate total revenue
+$totalRevenue = floatval($nonBatchRevenue) + floatval($batchRevenue);
+
+// Add debug logging
+error_log("Non-batch revenue: " . $nonBatchRevenue);
+error_log("Batch revenue: " . $batchRevenue);
+error_log("Total revenue: " . $totalRevenue);
 
 // Calculate total revenue
 $totalRevenue = $nonBatchRevenue + $batchRevenue;
