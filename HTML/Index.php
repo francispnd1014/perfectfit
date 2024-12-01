@@ -27,7 +27,7 @@
                 </div>
                 <img class="arrowleft" src="https://cdn.animaapp.com/projects/662e3db47c76cfe9d48b5b59/releases/662e3ddfc9610b16f5d28f56/img/arrow-2.svg" alt="Arrow 2">
             </div>
-            <h1 class="gown">RICH SABINIAN</h1>
+            <h1 class="gown">RICH SAdadadadadadadadBINIAN</h1>
             <p class="intro">PerfectFit: Gown Rental believes every occasion deserves a showstopping outfit. Explore our stunning collection of gowns and find the perfect style to express your unique personality and make your special event unforgettable.</p>
             <div>
             <a href="../HTML/Home User.php"><button href type="button">SEARCH DRESS</button></a>
