@@ -1007,7 +1007,7 @@ $result_reservations = $conn->query($sql_reservations);
                         }
                         currentIndex = event.state.index;
                     }
-                };
+                }; 
 
                 // Push initial state
                 history.replaceState({
@@ -1077,7 +1077,7 @@ $result_reservations = $conn->query($sql_reservations);
                     }
                 }
 
-                function updateStatus(ids, status) {
+    function updateStatus(ids, status) {
     if (!Array.isArray(ids)) {
         ids = [ids];
     }

@@ -602,7 +602,7 @@ $stmt->close();
                             <h3><?php echo htmlspecialchars($gowns[0]['name']); ?></h3>
                             <input type="hidden" name="gown_ids[]" value="<?php echo $gowns[0]['id']; ?>">
                         <?php endif; ?>
-                        <p class="notice">*Note: You can't cancel a batch rent. (Still experimental a feature this for demo only)</p>
+                        <p class="notice">*Note: You can't cancel a batch rent. (Still experimental this is for demo only)</p>
 
                         <label for="date_rented">Date of Delivery:</label>
                         <input class="int-delivery" type="date" id="date_rented" name="date_rented" required
