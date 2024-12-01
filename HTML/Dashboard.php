@@ -4,10 +4,6 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 if (!isset($_SESSION['email'])) {
     header("Location: Login.php");
     exit();
@@ -77,7 +73,7 @@ $nonBatchRevenue = $conn->query("
 $batchRevenue = $conn->query("
     SELECT SUM(total) AS revenue 
     FROM (
-        SELECT MIN(id) as batch_id, email, batch, SUM(total) as total
+        SELECT MIN(id) as batch_id, email, batch, total
         FROM rent 
         WHERE request = 'returned' 
         AND batch = 1
