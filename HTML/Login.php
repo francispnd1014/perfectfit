@@ -278,8 +278,7 @@ $conn->close();
                     </div>
                 </div>
                 <div class="input-field-container">
-                    <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required minlength="8" autocomplete="new-password">
-                    <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
+                <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required minlength="8" pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$" title="Password must contain at least one letter and one number"autocomplete="new-password">                    <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
                 </div>
                 <div class="input-field-container">
                     <input type="password" name="cpassword1" id="cpassword1" class="input-field" placeholder="Confirm Password" onkeyup="checkPasswordMatch()" required minlength="8" autocomplete="new-password">
@@ -287,6 +286,7 @@ $conn->close();
                 </div>
                 <div class="password-warning" id="password-warning">Passwords do not match!</div>
                 <div class="password-length-warning" id="password-length-warning">Password must be at least 8 characters long!</div>
+                <div class="password-alphanumeric-warning" id="password-alphanumeric-warning">Password must contain both letters and numbers!</div>
                 <?php if (!empty($register_error)) : ?>
                     <div class="warning-message"><?php echo $register_error; ?></div>
                 <?php elseif (!empty($register_success)) : ?>
@@ -394,16 +394,28 @@ $conn->close();
             container.classList.remove("active");
         });
 
+        function isAlphanumeric(str) {
+            return /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(str);
+        }
+
         function validatePassword() {
             var password = document.getElementById("password1").value;
             var confirmPassword = document.getElementById("cpassword1").value;
             var passwordLengthWarning = document.getElementById("password-length-warning");
+            var passwordAlphanumericWarning = document.getElementById("password-alphanumeric-warning");
 
             if (password.length < 8) {
                 passwordLengthWarning.style.display = "block";
                 return false;
             } else {
                 passwordLengthWarning.style.display = "none";
+            }
+
+            if (!isAlphanumeric(password)) {
+                passwordAlphanumericWarning.style.display = "block";
+                return false;
+            } else {
+                passwordAlphanumericWarning.style.display = "none";
             }
 
             if (password !== confirmPassword) {
