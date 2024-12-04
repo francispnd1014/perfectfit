@@ -278,7 +278,8 @@ $conn->close();
                     </div>
                 </div>
                 <div class="input-field-container">
-                <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required minlength="8" pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$" title="Password must contain at least one letter and one number"autocomplete="new-password">                    <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
+                <input type="password" name="password1" id="password1" class="input-field" placeholder="Password" required minlength="8" pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$" title="Password must contain at least one letter and one number and it must be 8 letters long" autocomplete="new-password">                    
+                <i class="fa fa-eye toggle-password" onclick="togglePasswordVisibility('password1')"></i>
                 </div>
                 <div class="input-field-container">
                     <input type="password" name="cpassword1" id="cpassword1" class="input-field" placeholder="Confirm Password" onkeyup="checkPasswordMatch()" required minlength="8" autocomplete="new-password">
