@@ -407,14 +407,12 @@ body {
 .password-alphanumeric-warning {
     color: red;
     font-size: 12px;
-    margin-top: 5px;
     display: none;
 }
 
 .password-length-warning {
     color: red;
     font-size: 12px;
-    margin-top: 5px;
     display: none;
 }
 
