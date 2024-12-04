@@ -400,31 +400,54 @@ $conn->close();
         }
 
         function validatePassword() {
-            var password = document.getElementById("password1").value;
-            var confirmPassword = document.getElementById("cpassword1").value;
-            var passwordLengthWarning = document.getElementById("password-length-warning");
-            var passwordAlphanumericWarning = document.getElementById("password-alphanumeric-warning");
+    var password = document.getElementById("password1").value;
+    var confirmPassword = document.getElementById("cpassword1").value;
+    var passwordLengthWarning = document.getElementById("password-length-warning");
+    var passwordAlphanumericWarning = document.getElementById("password-alphanumeric-warning");
+    
+    // Reset warnings
+    passwordLengthWarning.style.display = "none";
+    passwordAlphanumericWarning.style.display = "none";
 
-            if (password.length < 8) {
-                passwordLengthWarning.style.display = "block";
-                return false;
-            } else {
-                passwordLengthWarning.style.display = "none";
-            }
+    // Check length
+    if (password.length < 8) {
+        passwordLengthWarning.style.display = "block";
+        return false;
+    }
 
-            if (!isAlphanumeric(password)) {
-                passwordAlphanumericWarning.style.display = "block";
-                return false;
-            } else {
-                passwordAlphanumericWarning.style.display = "none";
-            }
+    // Check alphanumeric
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+        passwordAlphanumericWarning.style.display = "block";
+        return false;
+    }
 
-            if (password !== confirmPassword) {
-                alert("Passwords do not match!");
-                return false;
-            }
-            return true;
-        }
+    // Check match
+    if (password !== confirmPassword) {
+        document.getElementById("password-warning").style.display = "block";
+        return false;
+    }
+
+    return true;
+}
+
+// Add real-time validation on password input
+document.getElementById("password1").addEventListener("input", function() {
+    var password = this.value;
+    var passwordLengthWarning = document.getElementById("password-length-warning");
+    var passwordAlphanumericWarning = document.getElementById("password-alphanumeric-warning");
+
+    if (password.length < 8) {
+        passwordLengthWarning.style.display = "block";
+    } else {
+        passwordLengthWarning.style.display = "none";
+    }
+
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+        passwordAlphanumericWarning.style.display = "block";
+    } else {
+        passwordAlphanumericWarning.style.display = "none";
+    }
+});
 
         function checkPasswordMatch() {
             var password = document.getElementById("password1").value;
