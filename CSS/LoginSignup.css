@@ -249,11 +249,7 @@ body {
     transform: translateX(200%);
 }
 
-.password-warning {
-    display: none;
-    color: red;
-    font-size: 15px;
-}
+
 
 .success-message {
     display: none;
@@ -411,10 +407,18 @@ body {
 .password-alphanumeric-warning {
     color: red;
     font-size: 12px;
+    margin-top: 5px;
     display: none;
 }
 
 .password-length-warning {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.password-warning {
     color: red;
     font-size: 12px;
     margin-top: 5px;
